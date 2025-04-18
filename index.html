@@ -17,6 +17,7 @@
             <button id="google-signout-btn" style="display:none;">Cerrar sesión</button>
             <button id="drive-backup-btn" style="display:none;">Guardar en Drive</button>
             <button id="drive-restore-btn" style="display:none;">Restaurar desde Drive</button>
+            <button id="drive-delete-btn" style="display:none;">Borrar copia de seguridad</button>
         </div>
         <button id="open-add-modal" style="margin-bottom:18px;">Añadir contador</button>
         <div class="filter-tags-section">
@@ -64,8 +65,9 @@
         </div>
       </div>
     </div>
+    <script type="module" src="google-auth.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-    <script src="index.js"></script>
+    <script type="module" src="index.js"></script>
 </body>
 </html>
