@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contadores de Tiempo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Contadores de Tiempo</h1>
+        <form id="counter-form">
+            <input type="text" id="counter-name" placeholder="Nombre del contador" required>
+            <input type="date" id="counter-date" required>
+            <button type="submit">Añadir contador</button>
+        </form>
+        <div class="configurator">
+            <form id="config-form">
+                <label><input type="checkbox" name="years" checked> Años</label>
+                <label><input type="checkbox" name="months" checked> Meses</label>
+                <label><input type="checkbox" name="days" checked> Días</label>
+                <label><input type="checkbox" name="hours" checked> Horas</label>
+                <label><input type="checkbox" name="minutes" checked> Minutos</label>
+                <label><input type="checkbox" name="seconds" checked> Segundos</label>
+            </form>
+        </div>
+        <ul id="counters-list"></ul>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>
