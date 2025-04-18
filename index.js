@@ -1,12 +1,11 @@
 // Utilidades para calcular diferencia de fechas
-dateDiff = (from, to) => {
+function dateDiff(from, to) {
     let years = to.getFullYear() - from.getFullYear();
     let months = to.getMonth() - from.getMonth();
     let days = to.getDate() - from.getDate();
     let hours = to.getHours() - from.getHours();
     let minutes = to.getMinutes() - from.getMinutes();
     let seconds = to.getSeconds() - from.getSeconds();
-
     if (seconds < 0) { seconds += 60; minutes--; }
     if (minutes < 0) { minutes += 60; hours--; }
     if (hours < 0) { hours += 24; days--; }
@@ -17,7 +16,7 @@ dateDiff = (from, to) => {
     }
     if (months < 0) { months += 12; years--; }
     return { years, months, days, hours, minutes, seconds };
-};
+}
 
 function getConfig() {
     const defaultConfig = { years: true, months: true, days: true, hours: true, minutes: true, seconds: true };
@@ -50,28 +49,6 @@ function saveCounters(counters) {
     localStorage.setItem('counters', JSON.stringify(counters));
 }
 
-// Modal HTML
-const modalHtml = `
-<div id="edit-modal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <div class="modal-header">
-      <span class="modal-title">Editar contador</span>
-      <button class="modal-close" id="close-modal" type="button">&times;</button>
-    </div>
-    <form id="edit-form">
-      <div class="modal-body">
-        <input type="text" id="edit-name" required>
-        <input type="date" id="edit-date" required>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="cancel-modal">Cancelar</button>
-        <button type="submit">Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>`;
-document.body.insertAdjacentHTML('beforeend', modalHtml);
-
 // Popover de confirmación de borrado
 const popoverHtml = `
 <div id="delete-popover" class="popover" style="display:none;">
@@ -94,27 +71,147 @@ const toastHtml = `
 </div>`;
 document.body.insertAdjacentHTML('beforeend', toastHtml);
 
-let editIdx = null;
+// --- MODAL NUEVO/EDITAR CONTADOR CON ETIQUETAS ---
+let modalTags = [];
+let editingIdx = null;
 let deleteIdx = null;
 let lastDeleted = null;
 let toastTimeout = null;
+let filterTags = [];
 
-function openEditModal(idx) {
+function openCounterModal(mode = 'new', idx = null) {
+    const modal = document.getElementById('counter-modal');
+    const title = document.getElementById('counter-modal-title');
+    const nameInput = document.getElementById('modal-counter-name');
+    const dateInput = document.getElementById('modal-counter-date');
+    if (mode === 'edit' && idx !== null) {
+        const counters = getCounters();
+        const counter = counters[idx];
+        nameInput.value = counter.name;
+        dateInput.value = counter.date;
+        modalTags = Array.isArray(counter.tags) ? [...counter.tags] : [];
+        title.textContent = 'Editar contador';
+        editingIdx = idx;
+    } else {
+        nameInput.value = '';
+        dateInput.value = '';
+        modalTags = [];
+        title.textContent = 'Nuevo contador';
+        editingIdx = null;
+    }
+    renderTagsList();
+    renderTagSuggestions();
+    modal.style.display = 'flex';
+    setTimeout(() => nameInput.focus(), 100);
+}
+
+function closeCounterModal() {
+    document.getElementById('counter-modal').style.display = 'none';
+    editingIdx = null;
+}
+
+function getAllTags() {
     const counters = getCounters();
-    const counter = counters[idx];
-    document.getElementById('edit-name').value = counter.name;
-    document.getElementById('edit-date').value = counter.date;
-    document.getElementById('edit-modal').style.display = 'flex';
-    editIdx = idx;
-    setTimeout(() => {
-        document.getElementById('edit-name').focus();
-    }, 100);
+    const tagsSet = new Set();
+    counters.forEach(c => {
+        if (Array.isArray(c.tags)) {
+            c.tags.forEach(tag => tagsSet.add(tag));
+        }
+    });
+    return Array.from(tagsSet);
 }
 
-function closeEditModal() {
-    document.getElementById('edit-modal').style.display = 'none';
-    editIdx = null;
+function renderTagSuggestions() {
+    const suggestionsDiv = document.getElementById('tag-suggestions');
+    if (!suggestionsDiv) return;
+    const allTags = getAllTags().filter(tag => !modalTags.includes(tag));
+    suggestionsDiv.innerHTML = '';
+    allTags.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tag tag-suggestion';
+        btn.textContent = tag;
+        btn.onclick = () => {
+            modalTags.push(tag);
+            renderTagsList();
+            renderTagSuggestions();
+        };
+        suggestionsDiv.appendChild(btn);
+    });
+    suggestionsDiv.style.display = allTags.length ? 'flex' : 'none';
 }
+
+function renderTagsList() {
+    const tagsList = document.getElementById('tags-list');
+    tagsList.innerHTML = '';
+    modalTags.forEach((tag, i) => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag';
+        tagEl.textContent = tag;
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = '×';
+        removeBtn.className = 'remove-tag-btn';
+        removeBtn.onclick = () => {
+            modalTags.splice(i, 1);
+            renderTagsList();
+            renderTagSuggestions();
+        };
+        tagEl.appendChild(removeBtn);
+        tagsList.appendChild(tagEl);
+    });
+    renderTagSuggestions();
+}
+
+document.getElementById('add-tag-btn').onclick = function(e) {
+    e.preventDefault();
+    const tagInput = document.getElementById('tag-input');
+    const tag = tagInput.value.trim();
+    if (tag && !modalTags.includes(tag)) {
+        modalTags.push(tag);
+        renderTagsList();
+    }
+    tagInput.value = '';
+    tagInput.focus();
+};
+
+document.getElementById('tag-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('add-tag-btn').click();
+    }
+});
+
+document.getElementById('close-counter-modal').onclick = closeCounterModal;
+document.getElementById('cancel-counter-modal').onclick = closeCounterModal;
+document.getElementById('counter-modal').onclick = function(e) {
+    if (e.target === this) closeCounterModal();
+};
+document.addEventListener('keydown', function(e) {
+    if (document.getElementById('counter-modal').style.display !== 'none' && e.key === 'Escape') {
+        closeCounterModal();
+    }
+});
+
+document.getElementById('open-add-modal').onclick = function() {
+    openCounterModal('new');
+};
+
+document.getElementById('counter-form-modal').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('modal-counter-name').value.trim();
+    const date = document.getElementById('modal-counter-date').value;
+    if (!name || !date) return;
+    const counters = getCounters();
+    if (editingIdx !== null) {
+        counters[editingIdx] = { ...counters[editingIdx], name, date, tags: [...modalTags] };
+    } else {
+        counters.push({ name, date, tags: [...modalTags] });
+    }
+    saveCounters(counters);
+    renderCounters();
+    closeCounterModal();
+});
 
 function openDeletePopover(idx, button) {
     deleteIdx = idx;
@@ -166,27 +263,16 @@ function hideToast() {
     clearTimeout(toastTimeout);
 }
 
-document.getElementById('counters-list').addEventListener('click', function(e) {
+document.getElementById('counters-list').onclick = function(e) {
     if (e.target.classList.contains('edit-btn')) {
         const idx = e.target.getAttribute('data-idx');
-        openEditModal(idx);
+        openCounterModal('edit', idx);
     }
     if (e.target.classList.contains('delete-btn')) {
         const idx = e.target.getAttribute('data-idx');
         openDeletePopover(idx, e.target);
     }
-});
-
-document.getElementById('close-modal').onclick = closeEditModal;
-document.getElementById('cancel-modal').onclick = closeEditModal;
-document.getElementById('edit-modal').onclick = function(e) {
-    if (e.target === this) closeEditModal();
 };
-document.addEventListener('keydown', function(e) {
-    if (document.getElementById('edit-modal').style.display !== 'none' && e.key === 'Escape') {
-        closeEditModal();
-    }
-});
 
 document.getElementById('popover-cancel').onclick = closeDeletePopover;
 document.getElementById('popover-confirm').onclick = function() {
@@ -200,7 +286,7 @@ document.getElementById('popover-confirm').onclick = function() {
             // Deshacer
             const counters = getCounters();
             if (lastDeleted) {
-                counters.splice(lastDeleted.idx, 0, { name: lastDeleted.name, date: lastDeleted.date });
+                counters.splice(lastDeleted.idx, 0, { ...lastDeleted });
                 saveCounters(counters);
                 renderCounters();
                 lastDeleted = null;
@@ -221,44 +307,17 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-document.getElementById('edit-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('edit-name').value.trim();
-    const date = document.getElementById('edit-date').value;
-    if (!name || !date || editIdx === null) return;
-    const counters = getCounters();
-    counters[editIdx] = { name, date };
-    saveCounters(counters);
-    renderCounters();
-    closeEditModal();
-});
-
 function renderCounters() {
     const list = document.getElementById('counters-list');
     const counters = getCounters();
     const now = new Date();
     const config = getConfig();
-    if (list.children.length === counters.length) {
-        counters.forEach((counter, idx) => {
-            const target = new Date(counter.date);
-            let diff, text;
-            if (now < target) {
-                diff = dateDiff(now, target);
-                text = `Quedan ${formatDiff(diff, config)}`;
-            } else {
-                diff = dateDiff(target, now);
-                text = `Han pasado ${formatDiff(diff, config)}`;
-            }
-            const fechaStr = target.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            const li = list.children[idx];
-            li.querySelector('.counter-name').textContent = counter.name;
-            li.querySelector('.counter-date').textContent = `(${fechaStr})`;
-            li.querySelector('.counter-time').textContent = text;
-        });
-        return;
-    }
     list.innerHTML = '';
-    counters.forEach((counter, idx) => {
+    let filtered = counters;
+    if (filterTags.length) {
+        filtered = counters.filter(c => Array.isArray(c.tags) && filterTags.every(tag => c.tags.includes(tag)));
+    }
+    filtered.forEach((counter, idx) => {
         const target = new Date(counter.date);
         let diff, text;
         if (now < target) {
@@ -270,6 +329,10 @@ function renderCounters() {
         }
         const fechaStr = target.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
         const li = document.createElement('li');
+        let tagsHtml = '';
+        if (counter.tags && counter.tags.length) {
+            tagsHtml = `<span class="counter-tags">${counter.tags.map(tag => `<span class='tag'>${tag}</span>`).join(' ')}</span>`;
+        }
         li.innerHTML = `
           <span class="counter-info">
             <span>
@@ -277,6 +340,7 @@ function renderCounters() {
               <span class="counter-date">(${fechaStr})</span>
               <br>
               <span class="counter-time">${text}</span>
+              ${tagsHtml}
             </span>
           </span>
           <span class="counter-actions">
@@ -286,19 +350,8 @@ function renderCounters() {
         `;
         list.appendChild(li);
     });
+    renderFilterTags();
 }
-
-document.getElementById('counter-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('counter-name').value.trim();
-    const date = document.getElementById('counter-date').value;
-    if (!name || !date) return;
-    const counters = getCounters();
-    counters.push({ name, date });
-    saveCounters(counters);
-    renderCounters();
-    this.reset();
-});
 
 function startUpdating() {
     renderCounters();
@@ -306,6 +359,29 @@ function startUpdating() {
 }
 
 window.onload = startUpdating;
+
+function renderFilterTags() {
+    const filterTagsList = document.getElementById('filter-tags-list');
+    if (!filterTagsList) return;
+    const allTags = getAllTags();
+    filterTagsList.innerHTML = '';
+    allTags.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tag filter-tag-btn' + (filterTags.includes(tag) ? ' selected' : '');
+        btn.textContent = tag;
+        btn.onclick = () => {
+            if (filterTags.includes(tag)) {
+                filterTags = filterTags.filter(t => t !== tag);
+            } else {
+                filterTags.push(tag);
+            }
+            renderFilterTags();
+            renderCounters();
+        };
+        filterTagsList.appendChild(btn);
+    });
+}
 
 // Config form event
 const configForm = document.getElementById('config-form');
@@ -328,4 +404,5 @@ window.addEventListener('DOMContentLoaded', () => {
     Object.keys(config).forEach(key => {
         if (configForm[key]) configForm[key].checked = config[key];
     });
+    renderFilterTags();
 });

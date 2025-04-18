@@ -9,12 +9,15 @@
 <body>
     <div class="container">
         <h1>Contadores de Tiempo</h1>
-        <form id="counter-form">
-            <input type="text" id="counter-name" placeholder="Nombre del contador" required>
-            <input type="date" id="counter-date" required>
-            <button type="submit">Añadir contador</button>
-        </form>
+        <!-- El formulario original se oculta, ahora se usa el modal -->
+        <form id="counter-form" style="display:none;"></form>
+        <button id="open-add-modal" style="margin-bottom:18px;">Añadir contador</button>
+        <div class="filter-tags-section">
+          <label style="font-weight:500;color:#007bff;">Filtrar por etiquetas:</label>
+          <div id="filter-tags-list"></div>
+        </div>
         <div class="configurator">
+            <div class="configurator-title">Mostrar unidades de tiempo:</div>
             <form id="config-form">
                 <label><input type="checkbox" name="years" checked> Años</label>
                 <label><input type="checkbox" name="months" checked> Meses</label>
@@ -25,6 +28,34 @@
             </form>
         </div>
         <ul id="counters-list"></ul>
+    </div>
+    <!-- Modal para crear/editar contador con etiquetas -->
+    <div id="counter-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title" id="counter-modal-title">Nuevo contador</span>
+          <button class="modal-close" id="close-counter-modal" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="counter-form-modal">
+            <input type="text" id="modal-counter-name" placeholder="Nombre del contador" required>
+            <input type="date" id="modal-counter-date" required>
+            <!-- Etiquetas debajo de los campos principales -->
+            <div class="tags-section">
+              <div class="tags-input-row">
+                <input type="text" id="tag-input" placeholder="Añadir etiqueta">
+                <button type="button" id="add-tag-btn">Añadir</button>
+              </div>
+              <div id="tag-suggestions" style="margin-bottom: 4px;"></div>
+              <div id="tags-list"></div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancel-counter-modal">Cancelar</button>
+          <button type="submit" id="save-counter-btn" form="counter-form-modal">Guardar</button>
+        </div>
+      </div>
     </div>
     <script src="index.js"></script>
 </body>
