@@ -11,6 +11,13 @@
         <h1>Contadores de Tiempo</h1>
         <!-- El formulario original se oculta, ahora se usa el modal -->
         <form id="counter-form" style="display:none;"></form>
+        <div id="drive-backup-info" style="margin-bottom: 10px; color: #007bff; font-size: 0.98em;"></div>
+        <div class="drive-btns">
+            <button id="google-login-btn">Iniciar sesión con Google</button>
+            <button id="google-signout-btn" style="display:none;">Cerrar sesión</button>
+            <button id="drive-backup-btn" style="display:none;">Guardar en Drive</button>
+            <button id="drive-restore-btn" style="display:none;">Restaurar desde Drive</button>
+        </div>
         <button id="open-add-modal" style="margin-bottom:18px;">Añadir contador</button>
         <div class="filter-tags-section">
           <label style="font-weight:500;color:#007bff;">Filtrar por etiquetas:</label>
@@ -57,6 +64,8 @@
         </div>
       </div>
     </div>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <script src="index.js"></script>
 </body>
 </html>

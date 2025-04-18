@@ -28,6 +28,8 @@ input[type="text"], input[type="date"] {
     border-radius: 4px;
 }
 button {
+    min-width: 140px;
+    height: 40px;
     padding: 8px 16px;
     background: #007bff;
     color: #fff;
@@ -35,6 +37,11 @@ button {
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.2s;
+    line-height: 38px;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 button:hover {
     background: #0056b3;
@@ -508,4 +515,28 @@ ul#counters-list li .delete-btn:hover {
     accent-color: #007bff;
     width: 18px;
     height: 18px;
+}
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 5px;
+    background: transparent;
+    position: relative;
+    top: 0;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+}
+.drive-btns {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    align-items: center;
 }

@@ -333,13 +333,14 @@ function renderCounters() {
         if (counter.tags && counter.tags.length) {
             tagsHtml = `<span class="counter-tags">${counter.tags.map(tag => `<span class='tag'>${tag}</span>`).join(' ')}</span>`;
         }
+        // Añadimos un span con id único para el tiempo
         li.innerHTML = `
           <span class="counter-info">
             <span>
               <span class="counter-name">${counter.name}</span>
               <span class="counter-date">(${fechaStr})</span>
               <br>
-              <span class="counter-time">${text}</span>
+              <span class="counter-time" id="counter-time-${idx}">${text}</span>
               ${tagsHtml}
             </span>
           </span>
@@ -351,11 +352,37 @@ function renderCounters() {
         list.appendChild(li);
     });
     renderFilterTags();
+    // Iniciar actualización dinámica solo una vez
+    if (!window._countersDynamicInterval) {
+        window._countersDynamicInterval = setInterval(updateCountersTime, 1000);
+    }
+}
+
+function updateCountersTime() {
+    const counters = getCounters();
+    const now = new Date();
+    const config = getConfig();
+    let filtered = counters;
+    if (filterTags.length) {
+        filtered = counters.filter(c => Array.isArray(c.tags) && filterTags.every(tag => c.tags.includes(tag)));
+    }
+    filtered.forEach((counter, idx) => {
+        const target = new Date(counter.date);
+        let diff, text;
+        if (now < target) {
+            diff = dateDiff(now, target);
+            text = `Quedan ${formatDiff(diff, config)}`;
+        } else {
+            diff = dateDiff(target, now);
+            text = `Han pasado ${formatDiff(diff, config)}`;
+        }
+        const timeSpan = document.getElementById(`counter-time-${idx}`);
+        if (timeSpan) timeSpan.textContent = text;
+    });
 }
 
 function startUpdating() {
     renderCounters();
-    setInterval(renderCounters, 1000);
 }
 
 window.onload = startUpdating;
@@ -400,9 +427,223 @@ configForm.addEventListener('change', function() {
 
 // Al cargar, poner los valores del config en el form
 window.addEventListener('DOMContentLoaded', () => {
+    // Eliminar referencia a initGoogleGIS
+    // Solo cargar scripts externos si no están presentes
     const config = getConfig();
     Object.keys(config).forEach(key => {
         if (configForm[key]) configForm[key].checked = config[key];
     });
     renderFilterTags();
+    renderDriveBackupInfo();
+    // Si ya hay token, actualizar UI y refrescar token en segundo plano
+    if (window.gapi && gapi.client && typeof gapi.client.getToken === 'function') {
+        const token = gapi.client.getToken();
+        if (!token && window.tokenClient) {
+            // Solicitar token automáticamente al cargar la app
+            window.tokenClient.callback = (resp) => {
+                if (resp && !resp.error) {
+                    updateSigninStatus(true);
+                    renderDriveBackupInfo();
+                }
+            };
+            window.tokenClient.requestAccessToken({ prompt: '' });
+        } else if (token) {
+            updateSigninStatus(true);
+        }
+    }
 });
+
+// === GOOGLE DRIVE BACKUP/RESTORE (GIS + gapi.client VERSION) ===
+const CLIENT_ID = '998524962437-50rfr94nvutvqi6nk5v8b99ah2di0mtg.apps.googleusercontent.com';
+const API_KEY = '';
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+let accessToken = null;
+let tokenClient = null;
+let gapiInited = false;
+let gisInited = false;
+
+function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+    await gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY_DOC],
+    });
+    gapiInited = true;
+    maybeEnableDriveButtons();
+}
+
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // Se define en handleAuthClick
+    });
+    gisInited = true;
+    maybeEnableDriveButtons();
+}
+
+function maybeEnableDriveButtons() {
+    if (gapiInited && gisInited) {
+        updateSigninStatus(!!gapi.client.getToken());
+    }
+}
+
+function handleAuthClick() {
+    tokenClient.callback = (resp) => {
+        if (resp.error !== undefined) {
+            showToast('Error autenticando con Google');
+            return;
+        }
+        accessToken = resp.access_token;
+        updateSigninStatus(true);
+        renderDriveBackupInfo();
+    };
+    if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+    } else {
+        tokenClient.requestAccessToken({ prompt: '' });
+    }
+}
+
+function handleSignoutClick() {
+    const token = gapi.client.getToken();
+    if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken('');
+        accessToken = null;
+        updateSigninStatus(false);
+        renderDriveBackupInfo();
+    }
+}
+
+function updateSigninStatus(isSignedIn) {
+    document.getElementById('google-login-btn').style.display = isSignedIn ? 'none' : '';
+    document.getElementById('drive-backup-btn').style.display = isSignedIn ? '' : 'none';
+    document.getElementById('drive-restore-btn').style.display = isSignedIn ? '' : 'none';
+    document.getElementById('google-signout-btn').style.display = isSignedIn ? '' : 'none';
+    // Si no está logueado, el botón debe decir "Continuar con Google"
+    if (!isSignedIn) {
+        document.getElementById('google-login-btn').textContent = 'Continuar con Google';
+    }
+}
+
+document.getElementById('google-login-btn').textContent = 'Continuar con Google';
+document.getElementById('google-login-btn').onclick = handleAuthClick;
+document.getElementById('google-signout-btn').onclick = handleSignoutClick;
+document.getElementById('drive-backup-btn').onclick = backupToDrive;
+document.getElementById('drive-restore-btn').onclick = restoreFromDrive;
+
+function setButtonLoading(btnId, isLoading, loadingText) {
+    const btn = document.getElementById(btnId);
+    if (isLoading) {
+        btn.disabled = true;
+        btn.dataset.originalText = btn.textContent;
+        btn.innerHTML = `<span class="spinner"></span> ${loadingText}`;
+    } else {
+        btn.disabled = false;
+        if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+    }
+}
+
+async function backupToDrive() {
+    if (!gapi.client.getToken()) return showToast('Debes iniciar sesión con Google primero.');
+    setButtonLoading('drive-backup-btn', true, 'Guardando...');
+    const data = localStorage.getItem('counters') || '[]';
+    const fileContent = new Blob([data], { type: 'application/json' });
+    const metadata = {
+        name: 'time-counters-backup.json',
+        mimeType: 'application/json'
+    };
+    // Buscar si ya existe el archivo
+    let filesResponse = await gapi.client.drive.files.list({
+        q: "name='time-counters-backup.json' and trashed=false",
+        fields: 'files(id,name)'
+    });
+    const files = filesResponse.result.files;
+    let form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+    form.append('file', fileContent);
+    if (files && files.length > 0) {
+        // Actualizar archivo existente
+        const fileId = files[0].id;
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
+            method: 'PATCH',
+            headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token },
+            body: form
+        });
+        setButtonLoading('drive-backup-btn', false);
+        setLastDriveBackupTime(new Date());
+        renderDriveBackupInfo();
+        showToast('Backup actualizado en Google Drive');
+    } else {
+        // Crear archivo nuevo
+        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token },
+            body: form
+        });
+        setButtonLoading('drive-backup-btn', false);
+        setLastDriveBackupTime(new Date());
+        renderDriveBackupInfo();
+        showToast('Backup guardado en Google Drive');
+    }
+}
+
+async function restoreFromDrive() {
+    if (!gapi.client.getToken()) return showToast('Debes iniciar sesión con Google primero.');
+    setButtonLoading('drive-restore-btn', true, 'Restaurando...');
+    let filesResponse = await gapi.client.drive.files.list({
+        q: "name='time-counters-backup.json' and trashed=false",
+        fields: 'files(id,name)'
+    });
+    const files = filesResponse.result.files;
+    if (files && files.length > 0) {
+        const fileId = files[0].id;
+        const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { 'Authorization': 'Bearer ' + gapi.client.getToken().access_token }
+        });
+        const data = await resp.text();
+        localStorage.setItem('counters', data);
+        renderCounters();
+        setButtonLoading('drive-restore-btn', false);
+        showToast('Datos restaurados desde Google Drive');
+    } else {
+        setButtonLoading('drive-restore-btn', false);
+        showToast('No se encontró backup en Google Drive');
+    }
+}
+
+function getLastDriveBackupTime() {
+    return localStorage.getItem('lastDriveBackupTime');
+}
+function setLastDriveBackupTime(date) {
+    localStorage.setItem('lastDriveBackupTime', date.toISOString());
+}
+function renderDriveBackupInfo() {
+    const infoDiv = document.getElementById('drive-backup-info');
+    if (!infoDiv) return;
+    // Comprobar que gapi y gapi.client existen antes de usar getToken
+    if (!(window.gapi && gapi.client && typeof gapi.client.getToken === 'function' && gapi.client.getToken())) {
+        infoDiv.textContent = '';
+        return;
+    }
+    const last = getLastDriveBackupTime();
+    if (!last) {
+        infoDiv.textContent = 'No hay ninguna copia de seguridad en Google Drive.';
+    } else {
+        const lastDate = new Date(last);
+        const now = new Date();
+        const diffMs = now - lastDate;
+        const diffMins = Math.floor(diffMs / 60000);
+        let ago = '';
+        if (diffMins < 1) ago = 'hace menos de un minuto';
+        else if (diffMins < 60) ago = `hace ${diffMins} min`;
+        else if (diffMins < 1440) ago = `hace ${Math.floor(diffMins/60)} h`;
+        else ago = `hace ${Math.floor(diffMins/1440)} días`;
+        infoDiv.textContent = `Última copia en Drive: ${lastDate.toLocaleString()} (${ago})`;
+    }
+}
