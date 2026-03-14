@@ -1,0 +1,28 @@
+{
+  "name": "time-counters",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild index.js --bundle --format=iife --outfile=dist/app.js --minify",
+    "dev": "esbuild index.js --bundle --format=iife --outfile=dist/app.js --sourcemap --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SaurusLex/time-counters.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SaurusLex/time-counters/issues"
+  },
+  "homepage": "https://github.com/SaurusLex/time-counters#readme",
+  "devDependencies": {
+    "esbuild": "^0.27.3"
+  },
+  "dependencies": {
+    "firebase": "^12.10.0"
+  }
+}

@@ -1,73 +1,240 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contadores de Tiempo</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
     <div class="container">
-        <h1>Contadores de Tiempo</h1>
-        <!-- El formulario original se oculta, ahora se usa el modal -->
-        <form id="counter-form" style="display:none;"></form>
-        <div id="drive-backup-info" style="margin-bottom: 10px; color: #007bff; font-size: 0.98em;"></div>
-        <div class="drive-btns">
-            <button id="google-login-btn">Iniciar sesión con Google</button>
-            <button id="google-signout-btn" style="display:none;">Cerrar sesión</button>
-            <button id="drive-backup-btn" style="display:none;">Guardar en Drive</button>
-            <button id="drive-restore-btn" style="display:none;">Restaurar desde Drive</button>
-            <button id="drive-delete-btn" style="display:none;">Borrar copia de seguridad</button>
+      <h1>Contadores de Tiempo</h1>
+      <!-- El formulario original se oculta, ahora se usa el modal -->
+      <form id="counter-form" style="display: none"></form>
+      <div class="drive-btns">
+        <div class="btn-group add-group">
+          <button id="open-add-modal" class="btn-add">
+            <span class="btn-ico"><i class="fa-solid fa-plus"></i></span> Añadir
+            contador
+          </button>
         </div>
-        <button id="open-add-modal" style="margin-bottom:18px;">Añadir contador</button>
-        <div class="filter-tags-section">
-          <label style="font-weight:500;color:#007bff;">Filtrar por etiquetas:</label>
-          <div id="filter-tags-list"></div>
+        <div class="btn-group config-group">
+          <button id="open-config-modal" class="btn-auth">
+            <span class="btn-ico"><i class="fa-solid fa-gear"></i></span>
+            Configuración
+          </button>
         </div>
-        <div class="configurator">
-            <div class="configurator-title">Mostrar unidades de tiempo:</div>
-            <form id="config-form">
-                <label><input type="checkbox" name="years" checked> Años</label>
-                <label><input type="checkbox" name="months" checked> Meses</label>
-                <label><input type="checkbox" name="days" checked> Días</label>
-                <label><input type="checkbox" name="hours" checked> Horas</label>
-                <label><input type="checkbox" name="minutes" checked> Minutos</label>
-                <label><input type="checkbox" name="seconds" checked> Segundos</label>
-            </form>
-        </div>
-        <ul id="counters-list"></ul>
+      </div>
+      <div class="filter-tags-section">
+        <label style="font-weight: 500; color: #007bff"
+          >Filtrar por etiquetas:</label
+        >
+        <div id="filter-tags-list"></div>
+      </div>
+      <ul id="counters-list"></ul>
     </div>
     <!-- Modal para crear/editar contador con etiquetas -->
-    <div id="counter-modal" class="modal" style="display:none;">
+    <div id="counter-modal" class="modal" style="display: none">
       <div class="modal-content">
         <div class="modal-header">
-          <span class="modal-title" id="counter-modal-title">Nuevo contador</span>
-          <button class="modal-close" id="close-counter-modal" type="button">&times;</button>
+          <span class="modal-title" id="counter-modal-title"
+            >Nuevo contador</span
+          >
+          <button class="modal-close" id="close-counter-modal" type="button">
+            &times;
+          </button>
         </div>
         <div class="modal-body">
           <form id="counter-form-modal">
-            <input type="text" id="modal-counter-name" placeholder="Nombre del contador" required>
-            <input type="date" id="modal-counter-date" required>
-            <!-- Etiquetas debajo de los campos principales -->
+            <input
+              type="text"
+              id="modal-counter-name"
+              placeholder="Nombre del contador"
+              required
+            />
+            <input type="date" id="modal-counter-date" required />
+            <input
+              type="time"
+              id="modal-counter-time"
+              style="margin-top: 8px"
+            />
+            <small
+              id="modal-date-hint"
+              style="
+                display: none;
+                color: #555;
+                margin-top: -8px;
+                margin-bottom: 12px;
+                font-size: 0.85em;
+              "
+              >El año seleccionado será ignorado. Solo se usarán el día y el mes
+              para eventos anuales.</small
+            >
+
+            <!-- Frequency Selection -->
+            <div
+              class="form-group"
+              style="margin-top: 12px; margin-bottom: 12px"
+            >
+              <label
+                for="modal-counter-frequency"
+                style="
+                  display: block;
+                  margin-bottom: 4px;
+                  font-weight: 500;
+                  color: #333;
+                "
+                >Frecuencia:</label
+              >
+              <select
+                id="modal-counter-frequency"
+                name="modal-counter-frequency"
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                  background-color: white;
+                  height: 38px;
+                "
+              >
+                <option value="none">No recurrente</option>
+                <option value="daily">Diario</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensual</option>
+                <option value="annual">Anual (ej. cumpleaños)</option>
+              </select>
+            </div>
+
+            <!-- End Date for Recurring Events -->
+            <div
+              id="modal-end-date-group"
+              class="form-group"
+              style="display: none; margin-bottom: 12px"
+            >
+              <label
+                for="modal-counter-end-date"
+                style="
+                  display: block;
+                  margin-bottom: 4px;
+                  font-weight: 500;
+                  color: #333;
+                "
+                >Fecha de finalización (opcional):</label
+              >
+              <input
+                type="date"
+                id="modal-counter-end-date"
+                name="modal-counter-end-date"
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                "
+              />
+            </div>
+
             <div class="tags-section">
               <div class="tags-input-row">
-                <input type="text" id="tag-input" placeholder="Añadir etiqueta">
+                <input
+                  type="text"
+                  id="tag-input"
+                  placeholder="Añadir etiqueta"
+                />
                 <button type="button" id="add-tag-btn">Añadir</button>
               </div>
-              <div id="tag-suggestions" style="margin-bottom: 4px;"></div>
+              <div id="tag-suggestions" style="margin-bottom: 4px"></div>
               <div id="tags-list"></div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
           <button type="button" id="cancel-counter-modal">Cancelar</button>
-          <button type="submit" id="save-counter-btn" form="counter-form-modal">Guardar</button>
+          <button type="submit" id="save-counter-btn" form="counter-form-modal">
+            Guardar
+          </button>
         </div>
       </div>
     </div>
-    <script type="module" src="google-auth.js"></script>
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-    <script type="module" src="index.js"></script>
-</body>
+    <!-- Modal de configuración -->
+    <div id="config-modal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">Configuración</span>
+          <button class="modal-close" id="close-config-modal" type="button">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Sección de Google Drive deshabilitada temporalmente -->
+          <div
+            id="units-section"
+            class="units-section-modal units-section-box"
+            style="margin-top: 22px"
+          >
+            <div class="units-section-title">
+              <i class="fa-solid fa-clock" style="margin-right: 7px"></i
+              >Unidades de tiempo
+            </div>
+            <div id="config-form-modal" class="units-buttons-row">
+              <button type="button" class="unit-btn" data-unit="years">Años</button>
+              <button type="button" class="unit-btn" data-unit="months">Meses</button>
+              <button type="button" class="unit-btn" data-unit="days">Días</button>
+              <button type="button" class="unit-btn" data-unit="hours">Horas</button>
+              <button type="button" class="unit-btn" data-unit="minutes">Min</button>
+              <button type="button" class="unit-btn" data-unit="seconds">Seg</button>
+            </div>
+          </div>
+          <div
+            id="import-export-section"
+            class="units-section-modal units-section-box"
+            style="margin-top: 22px"
+          >
+            <div class="units-section-title">
+              <i
+                class="fa-solid fa-file-excel"
+                style="margin-right: 7px; color: #1d6f42"
+              ></i
+              >Importar / Exportar
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap">
+              <button id="export-excel-btn" class="btn-backup" type="button">
+                <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+              </button>
+              <label
+                for="import-excel-input"
+                class="btn-restore"
+                style="
+                  cursor: pointer;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 6px;
+                "
+              >
+                <i class="fa-solid fa-file-arrow-up"></i> Importar desde Excel
+                <input
+                  id="import-excel-input"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  style="display: none"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="close-config-modal-footer">Cerrar</button>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="dist/app.js"></script>
+  </body>
 </html>
