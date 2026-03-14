@@ -115,6 +115,21 @@ export async function restoreFromFirestore(silent = false) {
   }
 }
 
+function formatAgoFromLastSync(lastSync) {
+  const now = new Date();
+  const diffMs = now - lastSync;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffSecs = Math.floor(diffMs / 1000);
+  if (diffMins < 1) {
+    if (diffSecs === 0) return "hace un momento";
+    if (diffSecs === 1) return "hace 1 segundo";
+    return `hace ${diffSecs} segundos`;
+  }
+  if (diffMins < 60) return `hace ${diffMins} min`;
+  if (diffMins < 1440) return `hace ${Math.floor(diffMins / 60)} h`;
+  return `hace ${Math.floor(diffMins / 1440)} días`;
+}
+
 export async function renderFirebaseBackupInfo(container) {
   const el = container || document.getElementById("firebase-backup-info");
   if (!el) return;
@@ -123,20 +138,36 @@ export async function renderFirebaseBackupInfo(container) {
     el.textContent = "";
     return;
   }
+  if (el._lastSyncInterval) {
+    clearInterval(el._lastSyncInterval);
+    el._lastSyncInterval = null;
+  }
   try {
     const ref = getUserSettingsSyncRef();
     const snap = await getDoc(ref);
     if (snap.exists() && snap.data().lastSync) {
       const lastSync = snap.data().lastSync?.toDate?.() || new Date();
-      const now = new Date();
-      const diffMs = now - lastSync;
-      const diffMins = Math.floor(diffMs / 60000);
-      let ago = "";
-      if (diffMins < 1) ago = "hace menos de un minuto";
-      else if (diffMins < 60) ago = `hace ${diffMins} min`;
-      else if (diffMins < 1440) ago = `hace ${Math.floor(diffMins / 60)} h`;
-      else ago = `hace ${Math.floor(diffMins / 1440)} días`;
-      el.textContent = `Última sincronización: ${lastSync.toLocaleString()} (${ago})`;
+      const lastSyncStr = lastSync.toLocaleString();
+
+      function updateAgo() {
+        if (!el.isConnected) {
+          clearInterval(el._lastSyncInterval);
+          el._lastSyncInterval = null;
+          return;
+        }
+        const ago = formatAgoFromLastSync(lastSync);
+        el.textContent = `Última sincronización: ${lastSyncStr} (${ago})`;
+        const diffMs = new Date() - lastSync;
+        if (diffMs >= 60000 && el._lastSyncInterval) {
+          clearInterval(el._lastSyncInterval);
+          el._lastSyncInterval = null;
+        }
+      }
+
+      updateAgo();
+      if (new Date() - lastSync < 60000) {
+        el._lastSyncInterval = setInterval(updateAgo, 1000);
+      }
     } else {
       el.textContent = "Aún no has sincronizado.";
     }

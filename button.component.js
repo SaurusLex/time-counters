@@ -8,11 +8,14 @@ const BUTTON_COLOR_CLASSES = {
   success: "btn-success",
   warning: "btn-warning",
   info: "btn-info",
+  add: "btn-add",
+  auth: "btn-auth",
   default: "btn-default",
 };
 
 function createButton({
   text = "",
+  icon = null,
   onClick = null,
   color = "default",
   className = "",
@@ -21,7 +24,11 @@ function createButton({
 }) {
   const btn = document.createElement("button");
   btn.type = type;
-  btn.textContent = text;
+  if (icon) {
+    btn.innerHTML = `<span class="btn-ico"><i data-lucide="${icon}"></i></span><span class="btn-text">${text}</span>`;
+  } else {
+    btn.textContent = text;
+  }
   // Aplica la clase de color predefinido
   const colorClass =
     BUTTON_COLOR_CLASSES[color] || BUTTON_COLOR_CLASSES.default;

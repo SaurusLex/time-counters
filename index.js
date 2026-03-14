@@ -29,6 +29,7 @@ import {
 } from "./core/counterManager.js"; // Import addOrUpdateCounter
 import { showPopover, closePopover } from "./popover.js";
 import Modal from "./modal.component.js";
+import BottomSheet from "./bottom-sheet.component.js";
 
 
 function getConfig() {
@@ -70,16 +71,70 @@ function getCounterTimeElement(originalIdx, occurrenceIdx) {
   );
 }
 
+function showDeleteConfirm({ message, actions, anchorElement, counterName }) {
+  const isMobile = window.matchMedia("(max-width: 600px)").matches;
+  if (isMobile) {
+    let msg = typeof message === "string" ? message : "";
+    if (counterName) {
+      msg = msg.includes("este contador")
+        ? msg.replace("este contador", `«${counterName}»`)
+        : msg.includes("Qué deseas borrar")
+          ? `¿Qué deseas borrar del contador «${counterName}»?`
+          : `${msg} «${counterName}»`;
+    }
+    const cancelBtn = actions.find((a) => !a.onClick);
+    const confirmBtns = actions.filter((a) => a.onClick);
+    const cancelHtml = cancelBtn
+      ? `<button type="button" class="${cancelBtn.className || ""}" data-delete-action="cancel">${cancelBtn.text}</button>`
+      : "";
+    const confirmHtml = confirmBtns
+      .map(
+        (a, i) =>
+          `<button type="button" class="${a.className || ""}" data-delete-action="confirm-${i}">${a.text}</button>`
+      )
+      .join("");
+    const sheet = new BottomSheet({
+      header: '<span class="modal-title">¿Estás seguro?</span>',
+      body: `<p style="margin:0; color:#333;">${msg}</p>`,
+      footer: cancelHtml + confirmHtml,
+      closable: true,
+      onClose: () => {},
+    });
+    sheet.open();
+    const root = sheet.sheet;
+    confirmBtns.forEach((a, i) => {
+      const btn = root.querySelector(`[data-delete-action="confirm-${i}"]`);
+      if (btn) {
+        btn.onclick = () => {
+          a.onClick();
+          sheet.close();
+        };
+      }
+    });
+    const cancelEl = root.querySelector('[data-delete-action="cancel"]');
+    if (cancelEl) cancelEl.onclick = () => sheet.close();
+  } else {
+    showPopover({ message, actions, anchorElement });
+  }
+}
+
 // Inicializar el CounterManager con las dependencias necesarias
 initCounterManager({
   getConfig,
   getFilterTags,
-  openCounterModal, // openCounterModal (from index.js)
-  // openDeletePopover: showDeletePopover, // ELIMINADO: ya no existe showDeletePopover
-  renderFilterTags, // renderFilterTags (from index.js)
+  openCounterModal,
+  renderFilterTags,
   getDomListElement,
   getCounterTimeElement,
-  deleteCounter: deleteCounterFromManager, // Pass the manager's deleteCounter
+  deleteCounter: deleteCounterFromManager,
+  showDeleteConfirm,
+  onAfterDelete: async () => {
+    if (isSignedIn()) {
+      try {
+        await backupToFirestore();
+      } catch (e) {}
+    }
+  },
 });
 
 // --- ELIMINADO: Popover de confirmación de borrado legacy ---
@@ -91,6 +146,34 @@ const toastHtml = `
 </div>`;
 document.body.insertAdjacentHTML("beforeend", toastHtml);
 
+// Crear botones de header con el componente createButton
+const addBtnContainer = document.getElementById("add-button-container");
+const configBtnContainer = document.getElementById("config-button-container");
+if (addBtnContainer) {
+  const addBtn = window.createButton({
+    text: "Añadir contador",
+    icon: "plus",
+    color: "add",
+    id: "open-add-modal",
+    onClick: () => openCounterModal("new"),
+  });
+  addBtnContainer.appendChild(addBtn);
+}
+if (configBtnContainer) {
+  const configBtn = window.createButton({
+    text: "Configuración",
+    icon: "settings",
+    color: "auth",
+    id: "open-config-modal",
+    onClick: openConfigModal,
+  });
+  configBtnContainer.appendChild(configBtn);
+}
+if (typeof lucide !== "undefined") {
+  const driveBtns = document.querySelector(".drive-btns");
+  if (driveBtns) lucide.createIcons({ root: driveBtns });
+}
+
 // --- MODAL NUEVO/EDITAR CONTADOR CON ETIQUETAS ---
 let modalTags = [];
 let editingIdx = null;
@@ -98,48 +181,89 @@ let deleteIdx = null;
 let lastDeleted = null;
 let toastTimeout = null;
 let currentFilterTags = []; // Renamed for clarity and to avoid conflict if filterTags was meant to be local elsewhere.
+let counterModalRoot = null; // Contenedor actual: modal o BottomSheet
+let counterSheetView = null; // BottomSheet cuando se usa en móvil
+
+function getCounterRoot() {
+  return counterModalRoot;
+}
 
 function openCounterModal(mode = "new", idx = null) {
+  const isMobile = window.matchMedia("(max-width: 600px)").matches;
   const modal = document.getElementById("counter-modal");
-  const title = document.getElementById("counter-modal-title");
-  const nameInput = document.getElementById("modal-counter-name");
-  const dateInput = document.getElementById("modal-counter-date");
-  const timeInput = document.getElementById("modal-counter-time");
-  const frequencySelect = document.getElementById("modal-counter-frequency"); // Added
-  const endDateGroup = document.getElementById("modal-end-date-group"); // Added
-  const endDateInput = document.getElementById("modal-counter-end-date"); // Added
-  const dateHint = document.getElementById("modal-date-hint");
+  const modalContent = modal?.querySelector(".modal-content");
 
-  // Show/hide date hint and end date field based on frequency selection
+  if (isMobile) {
+    // Usar BottomSheet (mismo componente que configuración)
+    const headerEl = modalContent?.querySelector(".modal-header");
+    const bodyEl = modalContent?.querySelector(".modal-body");
+    const footerEl = modalContent?.querySelector(".modal-footer");
+    if (!headerEl || !bodyEl || !footerEl) return;
+
+    const view = new BottomSheet({
+      header: headerEl,
+      body: bodyEl,
+      footer: footerEl,
+      closable: true,
+      onClose: () => {
+        // Devolver header, body y footer al modal para próxima apertura
+        const sheet = view.sheet; // usar view (capturado), no counterSheetView (ya null)
+        if (sheet && modalContent) {
+          const h = sheet.querySelector(".modal-header");
+          const b = sheet.querySelector(".modal-body");
+          const f = sheet.querySelector(".modal-footer");
+          if (h) modalContent.appendChild(h);
+          if (b) modalContent.appendChild(b);
+          if (f) modalContent.appendChild(f);
+        }
+        counterModalRoot = null;
+        counterSheetView = null;
+        editingIdx = null;
+      },
+    });
+    counterSheetView = view;
+    counterModalRoot = view.sheet;
+    view.open();
+    if (typeof lucide !== "undefined") lucide.createIcons({ root: counterModalRoot });
+  } else {
+    counterModalRoot = modalContent;
+    modal.style.display = "flex";
+  }
+
+  const root = getCounterRoot();
+  const title = root?.querySelector("#counter-modal-title");
+  const nameInput = root?.querySelector("#modal-counter-name");
+  const dateInput = root?.querySelector("#modal-counter-date");
+  const timeInput = root?.querySelector("#modal-counter-time");
+  const frequencySelect = root?.querySelector("#modal-counter-frequency");
+  const endDateGroup = root?.querySelector("#modal-end-date-group");
+  const endDateInput = root?.querySelector("#modal-counter-end-date");
+  const dateHint = root?.querySelector("#modal-date-hint");
+
+  if (!nameInput || !dateInput || !frequencySelect) return;
+
   frequencySelect.onchange = function () {
     const selectedFrequency = this.value;
-    dateHint.style.display = selectedFrequency === "annual" ? "block" : "none";
-    endDateGroup.style.display =
-      selectedFrequency !== "none" ? "block" : "none";
-    if (selectedFrequency === "none") {
-      endDateInput.value = ""; // Clear end date if not recurring
-    }
+    if (dateHint) dateHint.style.display = selectedFrequency === "annual" ? "block" : "none";
+    if (endDateGroup) endDateGroup.style.display = selectedFrequency !== "none" ? "block" : "none";
+    if (selectedFrequency === "none" && endDateInput) endDateInput.value = "";
   };
 
   if (mode === "edit" && idx !== null) {
     const counters = getCounters();
     const counter = counters[idx];
     nameInput.value = counter.name;
-    // Rellenar fecha y hora a partir de counter.date
     if (counter.date) {
       const dateObj = new Date(counter.date);
       if (!isNaN(dateObj.getTime())) {
-        // Fecha (YYYY-MM-DD)
         const year = dateObj.getFullYear();
         const month = String(dateObj.getMonth() + 1).padStart(2, "0");
         const day = String(dateObj.getDate()).padStart(2, "0");
         dateInput.value = `${year}-${month}-${day}`;
-        // Hora (HH:MM)
         const hours = String(dateObj.getHours()).padStart(2, "0");
         const minutes = String(dateObj.getMinutes()).padStart(2, "0");
         timeInput.value = `${hours}:${minutes}`;
       } else {
-        // Compatibilidad si el formato no es reconocible
         dateInput.value = counter.date;
         timeInput.value = "";
       }
@@ -148,32 +272,35 @@ function openCounterModal(mode = "new", idx = null) {
       timeInput.value = "";
     }
     modalTags = Array.isArray(counter.tags) ? [...counter.tags] : [];
-    frequencySelect.value = counter.frequency || "none"; // Added
-    endDateInput.value = counter.endDate || ""; // Added
-    // Trigger change to set initial visibility of hint and end date
+    frequencySelect.value = counter.frequency || "none";
+    if (endDateInput) endDateInput.value = counter.endDate || "";
     frequencySelect.dispatchEvent(new Event("change"));
-    title.textContent = "Editar contador";
+    if (title) title.textContent = "Editar contador";
     editingIdx = idx;
   } else {
     nameInput.value = "";
     dateInput.value = "";
     timeInput.value = "";
     modalTags = [];
-    frequencySelect.value = "none"; // Added
-    endDateInput.value = ""; // Added
-    // Trigger change to set initial visibility of hint and end date
+    frequencySelect.value = "none";
+    if (endDateInput) endDateInput.value = "";
     frequencySelect.dispatchEvent(new Event("change"));
-    title.textContent = "Nuevo contador";
+    if (title) title.textContent = "Nuevo contador";
     editingIdx = null;
   }
   renderTagsList();
   renderTagSuggestions();
-  modal.style.display = "flex";
   setTimeout(() => nameInput.focus(), 100);
 }
 
 function closeCounterModal() {
-  document.getElementById("counter-modal").style.display = "none";
+  if (counterSheetView) {
+    counterSheetView.close();
+  } else {
+    document.getElementById("counter-modal").style.display = "none";
+  }
+  counterModalRoot = null;
+  counterSheetView = null;
   editingIdx = null;
 }
 
@@ -189,7 +316,8 @@ function getAllTags() {
 }
 
 function renderTagSuggestions() {
-  const suggestionsDiv = document.getElementById("tag-suggestions");
+  const root = getCounterRoot();
+  const suggestionsDiv = root?.querySelector("#tag-suggestions");
   if (!suggestionsDiv) return;
   const allTags = getAllTags().filter((tag) => !modalTags.includes(tag));
   suggestionsDiv.innerHTML = "";
@@ -214,7 +342,9 @@ function renderTagSuggestions() {
 }
 
 function renderTagsList() {
-  const tagsList = document.getElementById("tags-list");
+  const root = getCounterRoot();
+  const tagsList = root?.querySelector("#tags-list");
+  if (!tagsList) return;
   tagsList.innerHTML = "";
   modalTags.forEach((tag, i) => {
     const tagEl = window.createTag({
@@ -229,13 +359,22 @@ function renderTagsList() {
     tagsList.appendChild(tagEl);
   });
   // Botón añadir etiqueta
-  const addTagBtn = document.getElementById("add-tag-btn");
+  const addTagBtn = root?.querySelector("#add-tag-btn");
   if (addTagBtn) {
     const newBtn = window.createButton({
       text: "Añadir",
       color: "primary",
       id: "add-tag-btn",
-      onClick: addTagBtn.onclick,
+      onClick: () => {
+        const input = getCounterRoot()?.querySelector("#tag-input");
+        const tag = (input?.value || "").trim();
+        if (tag && !modalTags.includes(tag)) {
+          modalTags.push(tag);
+          if (input) input.value = "";
+          renderTagsList();
+          renderTagSuggestions();
+        }
+      },
     });
     addTagBtn.replaceWith(newBtn);
   }
@@ -255,17 +394,10 @@ document.getElementById("counter-modal").onclick = function (e) {
   if (e.target === this) closeCounterModal();
 };
 document.addEventListener("keydown", function (e) {
-  if (
-    document.getElementById("counter-modal").style.display !== "none" &&
-    e.key === "Escape"
-  ) {
+  if (e.key === "Escape" && (counterSheetView || document.getElementById("counter-modal")?.style.display !== "none")) {
     closeCounterModal();
   }
 });
-
-document.getElementById("open-add-modal").onclick = function () {
-  openCounterModal("new");
-};
 
 document
   .getElementById("counter-form-modal")
@@ -316,42 +448,9 @@ document
   });
 
 document.getElementById("counters-list").onclick = function (e) {
-  if (e.target.classList.contains("edit-btn")) {
-    const idx = e.target.getAttribute("data-idx");
-    openCounterModal("edit", idx);
-  }
-  if (e.target.classList.contains("delete-btn")) {
-    const idx = e.target.getAttribute("data-idx");
-    const counters = getCounters();
-    const counter = counters[idx];
-    if (!counter) return;
-    // Detectar si es una ocurrencia recurrente
-    const li = e.target.closest("li");
-    const occurrenceDate = li ? li.getAttribute("data-occurrence-date") : null;
-    showPopover({
-      message: "¿Estás seguro de eliminar este contador?",
-      actions: [
-        {
-          text: "Eliminar",
-          className: "btn-danger",
-          onClick: () => {
-            if (
-              occurrenceDate &&
-              counter.frequency &&
-              counter.frequency !== "none"
-            ) {
-              // Borrar solo la ocurrencia específica
-              deleteCounterFromManager(counter.id, occurrenceDate);
-            } else {
-              // Borrar el contador completo
-              deleteCounterFromManager(counter.id, null);
-            }
-          },
-        },
-        { text: "Cancelar", className: "btn-secondary" },
-      ],
-      anchorElement: e.target,
-    });
+  const btn = e.target.closest(".edit-btn");
+  if (btn) {
+    openCounterModal("edit", btn.getAttribute("data-idx"));
   }
 };
 
@@ -413,8 +512,15 @@ function deleteCounter(idx, deleteAllOccurrences = false) {
 
 function renderFilterTags() {
   const filterTagsList = document.getElementById("filter-tags-list");
-  if (!filterTagsList) return;
+  const filterSection = document.querySelector(".filter-tags-section");
+  if (!filterTagsList || !filterSection) return;
   const allTags = getAllTags();
+  if (allTags.length === 0) {
+    filterSection.style.display = "none";
+    currentFilterTags = [];
+    return;
+  }
+  filterSection.style.display = "";
   filterTagsList.innerHTML = "";
   allTags.forEach((tag) => {
     const btn = window.createTag({
@@ -441,15 +547,15 @@ window.renderFirebaseBackupInfo = renderFirebaseBackupInfo;
 window.renderCounters = renderCounters;
 
 window.addEventListener("DOMContentLoaded", () => {
+  if (typeof lucide !== "undefined") lucide.createIcons();
+  let initialAuthResolved = false;
   initAuth(async (user) => {
-    if (user) {
-      const localCounters = localStorage.getItem("counters");
-      if (!localCounters || localCounters === "[]") {
-        try {
-          await restoreFromFirestore(true);
-        } catch (e) {}
-      }
+    if (user && !initialAuthResolved) {
+      try {
+        await restoreFromFirestore(true);
+      } catch (e) {}
     }
+    initialAuthResolved = true;
   });
   // Configuración de formulario y UI
   const config = getConfig();
@@ -523,8 +629,9 @@ window.addEventListener("DOMContentLoaded", () => {
   setInterval(updateCountersTime, 1000);
 });
 
-// --- Modal de configuración usando el componente Modal ---
+// --- Modal de configuración: BottomSheet en móvil, Modal en escritorio ---
 function openConfigModal() {
+  const isMobile = window.matchMedia("(max-width: 600px)").matches;
   const header = `
     <span class="modal-title">Configuración</span>
   `;
@@ -532,7 +639,7 @@ function openConfigModal() {
   const body = `
     <div class="units-section-modal units-section-box" style="margin-top: 10px">
       <div class="units-section-title">
-        <i class="fa-solid fa-clock" style="margin-right: 7px"></i>Unidades de tiempo
+        <i data-lucide="clock" style="margin-right: 7px"></i>Unidades de tiempo
       </div>
       <div id="config-form-modal" class="units-buttons-row">
         <button type="button" class="unit-btn" data-unit="years">Años</button>
@@ -546,19 +653,19 @@ function openConfigModal() {
     </div>
     <div class="units-section-modal units-section-box" style="margin-top: 22px">
       <div class="units-section-title">
-        <i class="fa-solid fa-file-excel" style="margin-right: 7px; color: #1d6f42"></i>Importar / Exportar
+        <i data-lucide="file-spreadsheet" style="margin-right: 7px; color: #1d6f42"></i>Importar / Exportar
       </div>
       <div style="display: flex; gap: 12px; flex-wrap: wrap">
-        <button id="export-excel-btn" class="btn-backup" type="button"><i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel</button>
+        <button id="export-excel-btn" class="btn-backup" type="button"><i data-lucide="download"></i> Exportar a Excel</button>
         <label for="import-excel-input" class="btn-restore" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <i class="fa-solid fa-file-arrow-up"></i> Importar desde Excel
+          <i data-lucide="upload"></i> Importar desde Excel
           <input id="import-excel-input" type="file" accept=".xlsx,.xls" style="display: none" />
         </label>
       </div>
     </div>
     <div id="firebase-section" class="units-section-modal units-section-box" style="margin-top: 22px">
       <div class="units-section-title">
-        <i class="fa-solid fa-cloud" style="margin-right: 7px"></i>Sincronización con Firebase
+        <i data-lucide="cloud" style="margin-right: 7px"></i>Sincronización con Firebase
       </div>
       <div id="firebase-auth-area"></div>
     </div>
@@ -566,17 +673,14 @@ function openConfigModal() {
 
   const footer = `<button type="button" id="close-config-modal-footer">Cerrar</button>`;
 
-  const modal = new Modal({
-    header,
-    body,
-    footer,
-    closable: true,
-    onClose: () => {},
-  });
+  const view = isMobile
+    ? new BottomSheet({ header, body, footer, closable: true, onClose: () => {} })
+    : new Modal({ header, body, footer, closable: true, onClose: () => {} });
 
-  modal.open();
+  view.open();
 
-  const root = modal.modal;
+  const root = view.sheet ?? view.modal;
+  if (typeof lucide !== "undefined") lucide.createIcons({ root });
   const config = getConfig();
 
   // Sincronizar y manejar unidades + preview
@@ -633,20 +737,20 @@ function openConfigModal() {
       backupBtn.className = "btn-backup";
       backupBtn.type = "button";
       backupBtn.style.width = btnFullWidth;
-      backupBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar en la nube';
+      backupBtn.innerHTML = '<i data-lucide="cloud-upload"></i> Guardar en la nube';
       backupBtn.onclick = backupToFirestore;
       const restoreBtn = document.createElement("button");
       restoreBtn.id = "firebase-restore-btn";
       restoreBtn.className = "btn-restore";
       restoreBtn.type = "button";
       restoreBtn.style.width = btnFullWidth;
-      restoreBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Restaurar desde la nube';
+      restoreBtn.innerHTML = '<i data-lucide="cloud-download"></i> Restaurar desde la nube';
       restoreBtn.onclick = restoreFromFirestore;
       const logoutBtn = document.createElement("button");
       logoutBtn.className = "btn-secondary";
       logoutBtn.type = "button";
       logoutBtn.style.width = btnFullWidth;
-      logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión';
+      logoutBtn.innerHTML = '<i data-lucide="log-out"></i> Cerrar sesión';
       logoutBtn.onclick = handleLogoutClick;
       const hintStyle = "font-size: 0.85em; color: #666; margin: 4px 0 12px 0;";
       const backupHint = document.createElement("p");
@@ -674,7 +778,7 @@ function openConfigModal() {
       const loginBtn = document.createElement("button");
       loginBtn.className = "btn-backup";
       loginBtn.type = "button";
-      loginBtn.innerHTML = '<i class="fa-brands fa-google"></i> Iniciar sesión con Google';
+      loginBtn.innerHTML = '<i data-lucide="log-in"></i> Iniciar sesión con Google';
       loginBtn.onclick = handleLoginClick;
       area.appendChild(loginBtn);
     }
@@ -682,7 +786,7 @@ function openConfigModal() {
   renderFirebaseAuthArea();
   const authChangedHandler = () => renderFirebaseAuthArea();
   document.addEventListener("firebase-auth-changed", authChangedHandler);
-  modal.onClose = () => {
+  view.onClose = () => {
     document.removeEventListener("firebase-auth-changed", authChangedHandler);
   };
 
@@ -765,7 +869,7 @@ function openConfigModal() {
           renderCounters();
           window.showToast &&
             window.showToast("Contadores importados correctamente");
-          modal.close();
+          view.close();
         } catch (err) {
           window.showToast &&
             window.showToast(
@@ -781,13 +885,9 @@ function openConfigModal() {
   // Botón cerrar del footer
   const closeFooterBtn = root.querySelector("#close-config-modal-footer");
   if (closeFooterBtn) {
-    closeFooterBtn.onclick = () => modal.close();
+    closeFooterBtn.onclick = () => view.close();
   }
 }
 
-// Conectar botón principal a este modal
-const openConfigModalBtn = document.getElementById("open-config-modal");
-if (openConfigModalBtn) {
-  openConfigModalBtn.onclick = openConfigModal;
-}
+// El botón de configuración se crea con createButton y ya tiene onClick: openConfigModal
 

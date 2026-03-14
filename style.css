@@ -6,11 +6,84 @@ body {
 }
 .container {
   max-width: 800px;
-  margin: 40px auto;
-  background: #fff;
+  margin: 0 auto;
   padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+@media (max-width: 600px) {
+  .container {
+    max-width: none;
+    margin: 0;
+    padding: 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .drive-btns {
+    margin-bottom: 16px;
+  }
+  .btn-group {
+    margin-right: 0;
+  }
+  .filter-tags-section {
+    margin-bottom: 12px;
+    text-align: left;
+  }
+  .filter-tags-section label {
+    font-size: 0.95em;
+    text-align: left;
+  }
+  #filter-tags-list {
+    text-align: left;
+  }
+  ul#counters-list {
+    margin-top: 0;
+  }
+  ul#counters-list li {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .counter-info {
+    text-align: left;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .counter-info > span {
+    text-align: left;
+    width: 100%;
+  }
+  .counter-info > span > .counter-name {
+    font-size: 1.05em;
+    text-align: left;
+  }
+  .counter-info > span > .counter-date {
+    text-align: left;
+  }
+  .counter-info > span > .counter-time {
+    font-size: 0.9em;
+    word-break: break-word;
+    text-align: left;
+  }
+  .counter-actions {
+    margin-left: 0;
+    margin-top: 12px;
+    justify-content: flex-end;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  ul#counters-list li button {
+    margin-left: 0;
+  }
 }
 h1 {
   text-align: center;
@@ -62,18 +135,28 @@ ul#counters-list li {
   align-items: center;
   justify-content: space-between;
   border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-  transition: background 0.25s;
+  /* Smooth Shadow Stack 2026: umbra + penumbra + ambient occlusion */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 4px 8px rgba(0, 0, 0, 0.05);
+  transition: background 0.25s, box-shadow 0.25s;
   transform: none;
   z-index: 0;
 }
 ul#counters-list li:hover {
-  background: #f7f7f7; /* un poco más oscuro que el blanco */
+  background: #f7f7f7;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 8px 16px rgba(0, 0, 0, 0.06);
 }
 .counter-info {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 .counter-info > span > .counter-name,
 .counter-info > span > .counter-date,
@@ -251,6 +334,57 @@ ul#counters-list li .delete-btn:hover {
   .modal-content {
     min-width: 90vw;
   }
+}
+
+/* Bottom Sheet (móvil) */
+@keyframes bottomSheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bottom-sheet-grabber {
+  flex-shrink: 0;
+  padding: 12px 0 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+.bottom-sheet-grabber:active {
+  cursor: grabbing;
+}
+
+.bottom-sheet-grabber::before {
+  content: "";
+  width: 36px;
+  height: 4px;
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.bottom-sheet .modal-header {
+  flex-shrink: 0;
+  padding: 12px 20px 12px;
+  border-radius: 0;
+}
+.bottom-sheet .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 16px 20px;
+}
+.bottom-sheet .modal-footer {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border-radius: 0;
 }
 
 /* Popover styles */
@@ -487,21 +621,44 @@ ul#counters-list li .delete-btn:hover {
 .tag-suggestion {
   display: inline-flex;
   align-items: center;
-  border-radius: 16px;
-  padding: 3px 10px;
-  font-size: 1em;
   font-weight: 500;
   box-shadow: 0 1px 4px rgba(0, 123, 255, 0.07);
   transition: background 0.18s, color 0.18s, border 0.18s;
   position: relative;
-  gap: 6px;
   color: #007bff;
   background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%);
   border-width: 1px;
   border-style: solid;
   border-color: #b6d6f6;
-  min-height: 26px;
   height: auto;
+}
+.tag--xs {
+  padding: 2px 6px;
+  font-size: 0.72em;
+  min-height: 20px;
+  border-radius: 12px;
+  gap: 4px;
+}
+.tag--sm {
+  padding: 2px 8px;
+  font-size: 0.85em;
+  min-height: 22px;
+  border-radius: 14px;
+  gap: 5px;
+}
+.tag--md {
+  padding: 3px 10px;
+  font-size: 1em;
+  min-height: 26px;
+  border-radius: 16px;
+  gap: 6px;
+}
+.tag--lg {
+  padding: 4px 12px;
+  font-size: 1.1em;
+  min-height: 30px;
+  border-radius: 18px;
+  gap: 8px;
 }
 .tag-suggestion {
   border-style: dashed;
@@ -538,6 +695,13 @@ ul#counters-list li .delete-btn:hover {
   color: #a71d2a;
 }
 /* --- END TAGS --- */
+
+.filter-tags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .filter-tag-btn.selected {
   background: #007bff;
   color: #fff;
@@ -640,9 +804,10 @@ ul#counters-list li .delete-btn:hover {
   padding: 7px 12px;
   font-size: 0.98em;
   height: auto;
-  line-height: 1.2;
+  line-height: 1;
   margin-bottom: 0;
   white-space: nowrap;
+  gap: 6px;
 }
 @media (max-width: 700px) {
   .drive-btns {
@@ -729,10 +894,40 @@ ul#counters-list li .delete-btn:hover {
   background: #0056b3;
   color: #fff;
 }
+.drive-btns .btn-ico {
+  margin-right: 0;
+}
+.drive-btns .btn-ico svg {
+  margin-right: 0;
+}
 .btn-ico {
-  margin-right: 6px;
   font-size: 1.15em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+}
+.btn-ico svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+  flex-shrink: 0;
+}
+.btn-text {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+button svg.lucide,
+.btn-backup svg.lucide,
+.btn-restore svg.lucide,
+.units-section-title svg.lucide {
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 6px;
   vertical-align: middle;
+  flex-shrink: 0;
 }
 @media (max-width: 700px) {
   .drive-btns {
@@ -741,16 +936,13 @@ ul#counters-list li .delete-btn:hover {
     gap: 8px;
   }
   .btn-group {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     border-right: none;
-    border-bottom: 2px solid #e3e3e3;
-    padding-right: 0;
-    padding-bottom: 10px;
-    margin-right: 0;
-  }
-  .btn-group:last-child {
     border-bottom: none;
+    padding-right: 0;
     padding-bottom: 0;
+    margin-right: 0;
   }
 }
 .modern-modal-content {

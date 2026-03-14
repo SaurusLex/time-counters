@@ -2,15 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Contadores de Tiempo</title>
     <link rel="stylesheet" href="style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -18,18 +13,8 @@
       <!-- El formulario original se oculta, ahora se usa el modal -->
       <form id="counter-form" style="display: none"></form>
       <div class="drive-btns">
-        <div class="btn-group add-group">
-          <button id="open-add-modal" class="btn-add">
-            <span class="btn-ico"><i class="fa-solid fa-plus"></i></span> Añadir
-            contador
-          </button>
-        </div>
-        <div class="btn-group config-group">
-          <button id="open-config-modal" class="btn-auth">
-            <span class="btn-ico"><i class="fa-solid fa-gear"></i></span>
-            Configuración
-          </button>
-        </div>
+        <div class="btn-group add-group" id="add-button-container"></div>
+        <div class="btn-group config-group" id="config-button-container"></div>
       </div>
       <div class="filter-tags-section">
         <label style="font-weight: 500; color: #007bff"
@@ -180,7 +165,7 @@
             style="margin-top: 22px"
           >
             <div class="units-section-title">
-              <i class="fa-solid fa-clock" style="margin-right: 7px"></i
+              <i data-lucide="clock" style="margin-right: 7px"></i
               >Unidades de tiempo
             </div>
             <div id="config-form-modal" class="units-buttons-row">
@@ -199,14 +184,14 @@
           >
             <div class="units-section-title">
               <i
-                class="fa-solid fa-file-excel"
+                data-lucide="file-spreadsheet"
                 style="margin-right: 7px; color: #1d6f42"
               ></i
               >Importar / Exportar
             </div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap">
               <button id="export-excel-btn" class="btn-backup" type="button">
-                <i class="fa-solid fa-file-arrow-down"></i> Exportar a Excel
+                <i data-lucide="download"></i> Exportar a Excel
               </button>
               <label
                 for="import-excel-input"
@@ -218,7 +203,7 @@
                   gap: 6px;
                 "
               >
-                <i class="fa-solid fa-file-arrow-up"></i> Importar desde Excel
+                <i data-lucide="upload"></i> Importar desde Excel
                 <input
                   id="import-excel-input"
                   type="file"

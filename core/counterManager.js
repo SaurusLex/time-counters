@@ -11,7 +11,11 @@ let _openCounterModal = () => {};
 let _renderFilterTags = () => {};
 let _getDomListElement = () => null;
 let _getCounterTimeElement = () => null;
-let _renderCounters = () => {}; // Placeholder for the actual renderCounters function
+let _renderCounters = () => {};
+let _showDeleteConfirm = (opts) => {
+  import("../popover.js").then(({ showPopover }) => showPopover(opts));
+};
+let _onAfterDelete = () => {};
 
 export function initCounterManager(dependencies) {
   _getConfig = dependencies.getConfig;
@@ -20,8 +24,9 @@ export function initCounterManager(dependencies) {
   _renderFilterTags = dependencies.renderFilterTags;
   _getDomListElement = dependencies.getDomListElement;
   _getCounterTimeElement = dependencies.getCounterTimeElement;
-  // Pass the actual renderCounters function, not a placeholder
   _renderCounters = renderCounters;
+  if (dependencies.showDeleteConfirm) _showDeleteConfirm = dependencies.showDeleteConfirm;
+  if (dependencies.onAfterDelete) _onAfterDelete = dependencies.onAfterDelete;
 }
 
 export function getCounters() {
@@ -61,6 +66,7 @@ export function deleteCounter(id, occurrenceDateString) {
         saveCounters(counters);
         _renderCounters();
         _renderFilterTags();
+        _onAfterDelete?.();
         return true;
       }
     }
@@ -87,6 +93,7 @@ export function deleteCounter(id, occurrenceDateString) {
   saveCounters(counters);
   _renderCounters();
   _renderFilterTags();
+  _onAfterDelete?.();
   return true;
 }
 
@@ -273,7 +280,7 @@ export function renderCounters() {
           const tagsSpan = document.createElement("span");
           tagsSpan.className = "counter-tags";
           counter.tags.forEach((tag) => {
-            const tagEl = window.createTag({ text: tag, removable: false });
+            const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
             tagsSpan.appendChild(tagEl);
           });
           tagsHtml = tagsSpan.outerHTML;
@@ -299,52 +306,34 @@ export function renderCounters() {
             className: "delete-btn",
             onClick: (e) => {
               if (isRecurring) {
-                // Preguntar si borrar solo este evento o toda la serie
-                import("../popover.js").then(({ showPopover }) => {
-                  const li = e.target.closest("li");
-                  const occurrenceDate = li
-                    ? li.getAttribute("data-occurrence-date")
-                    : null;
-                  showPopover({
-                    message: "¿Qué deseas borrar?",
-                    actions: [
-                      {
-                        text: "Solo este evento",
-                        className: "btn-danger",
-                        onClick: () => {
-                          if (occurrenceDate) {
-                            deleteCounter(counter.id, occurrenceDate);
-                          } else {
-                            // Si no hay occurrenceDate, borra la serie entera
-                            deleteCounter(counter.id, null);
-                          }
-                        },
+                const li = e.target.closest("li");
+                const occurrenceDate = li ? li.getAttribute("data-occurrence-date") : null;
+                _showDeleteConfirm({
+                  message: "¿Qué deseas borrar?",
+                  actions: [
+                    {
+                      text: "Solo este evento",
+                      className: "btn-danger",
+                      onClick: () => {
+                        if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
+                        else deleteCounter(counter.id, null);
                       },
-                      {
-                        text: "Toda la serie",
-                        className: "btn-danger",
-                        onClick: () => deleteCounter(counter.id, null),
-                      },
-                      { text: "Cancelar", className: "btn-secondary" },
-                    ],
-                    anchorElement: e.target,
-                  });
+                    },
+                    { text: "Toda la serie", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+                    { text: "Cancelar", className: "btn-secondary" },
+                  ],
+                  anchorElement: e.target,
+                  counterName: counter.name,
                 });
               } else {
-                // No recurrente: popover simple
-                import("../popover.js").then(({ showPopover }) => {
-                  showPopover({
-                    message: "¿Estás seguro de eliminar este contador?",
-                    actions: [
-                      {
-                        text: "Eliminar",
-                        className: "btn-danger",
-                        onClick: () => deleteCounter(counter.id, null),
-                      },
-                      { text: "Cancelar", className: "btn-secondary" },
-                    ],
-                    anchorElement: e.target,
-                  });
+                _showDeleteConfirm({
+                  message: "¿Estás seguro de eliminar este contador?",
+                  actions: [
+                    { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+                    { text: "Cancelar", className: "btn-secondary" },
+                  ],
+                  anchorElement: e.target,
+                  counterName: counter.name,
                 });
               }
             },
@@ -440,7 +429,7 @@ export function renderCounters() {
           const tagsSpan = document.createElement("span");
           tagsSpan.className = "counter-tags";
           counter.tags.forEach((tag) => {
-            const tagEl = window.createTag({ text: tag, removable: false });
+            const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
             tagsSpan.appendChild(tagEl);
           });
           tagsHtml = tagsSpan.outerHTML;
@@ -466,52 +455,34 @@ export function renderCounters() {
             className: "delete-btn",
             onClick: (e) => {
               if (isRecurring) {
-                // Preguntar si borrar solo este evento o toda la serie
-                import("../popover.js").then(({ showPopover }) => {
-                  const li = e.target.closest("li");
-                  const occurrenceDate = li
-                    ? li.getAttribute("data-occurrence-date")
-                    : null;
-                  showPopover({
-                    message: "¿Qué deseas borrar?",
-                    actions: [
-                      {
-                        text: "Solo este evento",
-                        className: "btn-danger",
-                        onClick: () => {
-                          if (occurrenceDate) {
-                            deleteCounter(counter.id, occurrenceDate);
-                          } else {
-                            // Si no hay occurrenceDate, borra la serie entera
-                            deleteCounter(counter.id, null);
-                          }
-                        },
+                const li = e.target.closest("li");
+                const occurrenceDate = li ? li.getAttribute("data-occurrence-date") : null;
+                _showDeleteConfirm({
+                  message: "¿Qué deseas borrar?",
+                  actions: [
+                    {
+                      text: "Solo este evento",
+                      className: "btn-danger",
+                      onClick: () => {
+                        if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
+                        else deleteCounter(counter.id, null);
                       },
-                      {
-                        text: "Toda la serie",
-                        className: "btn-danger",
-                        onClick: () => deleteCounter(counter.id, null),
-                      },
-                      { text: "Cancelar", className: "btn-secondary" },
-                    ],
-                    anchorElement: e.target,
-                  });
+                    },
+                    { text: "Toda la serie", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+                    { text: "Cancelar", className: "btn-secondary" },
+                  ],
+                  anchorElement: e.target,
+                  counterName: counter.name,
                 });
               } else {
-                // No recurrente: popover simple
-                import("../popover.js").then(({ showPopover }) => {
-                  showPopover({
-                    message: "¿Estás seguro de eliminar este contador?",
-                    actions: [
-                      {
-                        text: "Eliminar",
-                        className: "btn-danger",
-                        onClick: () => deleteCounter(counter.id, null),
-                      },
-                      { text: "Cancelar", className: "btn-secondary" },
-                    ],
-                    anchorElement: e.target,
-                  });
+                _showDeleteConfirm({
+                  message: "¿Estás seguro de eliminar este contador?",
+                  actions: [
+                    { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+                    { text: "Cancelar", className: "btn-secondary" },
+                  ],
+                  anchorElement: e.target,
+                  counterName: counter.name,
                 });
               }
             },
@@ -564,7 +535,7 @@ export function renderCounters() {
         const tagsSpan = document.createElement("span");
         tagsSpan.className = "counter-tags";
         counter.tags.forEach((tag) => {
-          const tagEl = window.createTag({ text: tag, removable: false });
+          const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
           tagsSpan.appendChild(tagEl);
         });
         tagsHtml = tagsSpan.outerHTML;
@@ -589,19 +560,14 @@ export function renderCounters() {
           "data-idx": originalIdx.toString(),
           className: "delete-btn",
           onClick: (e) => {
-            import("../popover.js").then(({ showPopover }) => {
-              showPopover({
-                message: "¿Estás seguro de eliminar este contador?",
-                actions: [
-                  {
-                    text: "Eliminar",
-                    className: "btn-danger",
-                    onClick: () => deleteCounter(counter.id, null),
-                  },
-                  { text: "Cancelar", className: "btn-secondary" },
-                ],
-                anchorElement: e.target,
-              });
+            _showDeleteConfirm({
+              message: "¿Estás seguro de eliminar este contador?",
+              actions: [
+                { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+                { text: "Cancelar", className: "btn-secondary" },
+              ],
+              anchorElement: e.target,
+              counterName: counter.name,
             });
           },
         })

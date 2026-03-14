@@ -1,9 +1,12 @@
 // Componente para crear tags reutilizables
-// Uso: createTag({ text, removable, onRemove, selectable, selected, onSelect })
+// Uso: createTag({ text, size, removable, onRemove, selectable, selected, onSelect })
 
-function createTag({ text, removable = false, onRemove = null, selectable = false, selected = false, onSelect = null }) {
+const VALID_SIZES = ["xs", "sm", "md", "lg"];
+
+function createTag({ text, size = "md", removable = false, onRemove = null, selectable = false, selected = false, onSelect = null }) {
     const tag = document.createElement('span');
-    tag.className = 'tag';
+    const sizeClass = VALID_SIZES.includes(size) ? `tag--${size}` : "tag--md";
+    tag.className = `tag ${sizeClass}`;
     tag.textContent = text;
     if (selectable) {
         tag.classList.add('selectable-tag');
