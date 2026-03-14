@@ -15,7 +15,7 @@ class BottomSheet {
     this.overlay = document.createElement('div');
     this.overlay.className = 'bottom-sheet-overlay';
     this.overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
       background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center;
       z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.2s;
     `;
@@ -24,7 +24,7 @@ class BottomSheet {
     this.sheet.className = 'bottom-sheet';
     this.sheet.style.cssText = `
       width: 100%; max-height: 85vh; background: #fff; border-radius: 16px 16px 0 0;
-      box-shadow: 0 -4px 24px rgba(0,0,0,0.15); padding: 0; position: relative;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15); padding: 0; margin-bottom: env(safe-area-inset-bottom); position: relative;
       display: flex; flex-direction: column; overflow: hidden;
       animation: bottomSheetSlideUp 0.3s ease-out;
     `;
