@@ -30,6 +30,7 @@ import {
 import { showPopover, closePopover } from "./popover.js";
 import Modal from "./modal.component.js";
 import BottomSheet from "./bottom-sheet.component.js";
+import "./dropdown.component.js";
 
 
 function getConfig() {
@@ -174,6 +175,32 @@ if (typeof lucide !== "undefined") {
   if (driveBtns) lucide.createIcons({ root: driveBtns });
 }
 
+// Botón para quitar la hora (usa createButton)
+const clearTimeContainer = document.getElementById("clear-time-btn-container");
+if (clearTimeContainer && window.createButton) {
+  const clearBtn = window.createButton({
+    icon: "x",
+    text: "",
+    color: "secondary",
+    size: "md",
+    shape: "circle",
+    className: "clear-time-btn",
+    type: "button",
+    title: "Quitar hora",
+    id: "clear-time-btn",
+    onClick: () => {
+      const timeInput = document.getElementById("modal-counter-time");
+      if (timeInput) {
+        timeInput.value = "";
+        updateClearTimeButtonState();
+      }
+    },
+  });
+  clearBtn.style.display = "none";
+  clearTimeContainer.appendChild(clearBtn);
+  if (typeof lucide !== "undefined") lucide.createIcons({ root: clearTimeContainer });
+}
+
 // --- MODAL NUEVO/EDITAR CONTADOR CON ETIQUETAS ---
 let modalTags = [];
 let editingIdx = null;
@@ -235,19 +262,13 @@ function openCounterModal(mode = "new", idx = null) {
   const nameInput = root?.querySelector("#modal-counter-name");
   const dateInput = root?.querySelector("#modal-counter-date");
   const timeInput = root?.querySelector("#modal-counter-time");
-  const frequencySelect = root?.querySelector("#modal-counter-frequency");
+  const frequencyDropdown = root?.querySelector("#frequency-dropdown-container .dropdown-wrapper");
+  const frequencyHiddenInput = root?.querySelector("#modal-counter-frequency");
   const endDateGroup = root?.querySelector("#modal-end-date-group");
   const endDateInput = root?.querySelector("#modal-counter-end-date");
   const dateHint = root?.querySelector("#modal-date-hint");
 
-  if (!nameInput || !dateInput || !frequencySelect) return;
-
-  frequencySelect.onchange = function () {
-    const selectedFrequency = this.value;
-    if (dateHint) dateHint.style.display = selectedFrequency === "annual" ? "block" : "none";
-    if (endDateGroup) endDateGroup.style.display = selectedFrequency !== "none" ? "block" : "none";
-    if (selectedFrequency === "none" && endDateInput) endDateInput.value = "";
-  };
+  if (!nameInput || !dateInput || !frequencyDropdown || !frequencyHiddenInput) return;
 
   if (mode === "edit" && idx !== null) {
     const counters = getCounters();
@@ -260,9 +281,13 @@ function openCounterModal(mode = "new", idx = null) {
         const month = String(dateObj.getMonth() + 1).padStart(2, "0");
         const day = String(dateObj.getDate()).padStart(2, "0");
         dateInput.value = `${year}-${month}-${day}`;
-        const hours = String(dateObj.getHours()).padStart(2, "0");
-        const minutes = String(dateObj.getMinutes()).padStart(2, "0");
-        timeInput.value = `${hours}:${minutes}`;
+        if (counter.date.includes("T")) {
+          const hours = String(dateObj.getHours()).padStart(2, "0");
+          const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+          timeInput.value = `${hours}:${minutes}`;
+        } else {
+          timeInput.value = "";
+        }
       } else {
         dateInput.value = counter.date;
         timeInput.value = "";
@@ -272,9 +297,11 @@ function openCounterModal(mode = "new", idx = null) {
       timeInput.value = "";
     }
     modalTags = Array.isArray(counter.tags) ? [...counter.tags] : [];
-    frequencySelect.value = counter.frequency || "none";
+    const freq = counter.frequency || "none";
+    frequencyDropdown.setValue(freq);
+    frequencyHiddenInput.value = freq;
     if (endDateInput) endDateInput.value = counter.endDate || "";
-    frequencySelect.dispatchEvent(new Event("change"));
+    updateFrequencyDependentUI(root, freq);
     if (title) title.textContent = "Editar contador";
     editingIdx = idx;
   } else {
@@ -282,15 +309,25 @@ function openCounterModal(mode = "new", idx = null) {
     dateInput.value = "";
     timeInput.value = "";
     modalTags = [];
-    frequencySelect.value = "none";
+    frequencyDropdown.setValue("none");
+    frequencyHiddenInput.value = "none";
     if (endDateInput) endDateInput.value = "";
-    frequencySelect.dispatchEvent(new Event("change"));
+    updateFrequencyDependentUI(root, "none");
     if (title) title.textContent = "Nuevo contador";
     editingIdx = null;
   }
   renderTagsList();
   renderTagSuggestions();
+  updateClearTimeButtonState(root);
   setTimeout(() => nameInput.focus(), 100);
+}
+
+function updateClearTimeButtonState(root) {
+  const r = root || getCounterRoot() || document;
+  const timeInput = r.querySelector?.("#modal-counter-time");
+  const clearBtn = r.querySelector?.("#clear-time-btn");
+  if (!timeInput || !clearBtn) return;
+  clearBtn.style.display = timeInput.value ? "flex" : "none";
 }
 
 function closeCounterModal() {
@@ -388,8 +425,47 @@ document.getElementById("tag-input").addEventListener("keydown", function (e) {
   }
 });
 
+const FREQUENCY_OPTIONS = [
+  { value: "none", label: "No recurrente" },
+  { value: "daily", label: "Diario" },
+  { value: "weekly", label: "Semanal" },
+  { value: "monthly", label: "Mensual" },
+  { value: "annual", label: "Anual (ej. cumpleaños)" },
+];
+
+function updateFrequencyDependentUI(root, frequency) {
+  const dateHint = root?.querySelector("#modal-date-hint");
+  const endDateGroup = root?.querySelector("#modal-end-date-group");
+  const endDateInput = root?.querySelector("#modal-counter-end-date");
+  if (dateHint) dateHint.style.display = frequency === "annual" ? "block" : "none";
+  if (endDateGroup) endDateGroup.style.display = frequency !== "none" ? "block" : "none";
+  if (frequency === "none" && endDateInput) endDateInput.value = "";
+}
+
+function initFrequencyDropdown() {
+  const container = document.getElementById("frequency-dropdown-container");
+  const hiddenInput = document.getElementById("modal-counter-frequency");
+  if (!container || !hiddenInput || typeof createDropdown !== "function") return;
+
+  const dropdown = createDropdown({
+    options: FREQUENCY_OPTIONS,
+    value: "none",
+    placeholder: "Seleccionar...",
+    mobileTitle: "Frecuencia",
+    className: "modal-frequency-dropdown",
+    onSelect: (value) => {
+      hiddenInput.value = value;
+      updateFrequencyDependentUI(getCounterRoot(), value);
+    },
+  });
+  container.appendChild(dropdown);
+}
+
 document.getElementById("close-counter-modal").onclick = closeCounterModal;
 document.getElementById("cancel-counter-modal").onclick = closeCounterModal;
+
+// Actualizar visibilidad del botón quitar hora cuando cambia el input
+document.getElementById("modal-counter-time")?.addEventListener("input", () => updateClearTimeButtonState());
 document.getElementById("counter-modal").onclick = function (e) {
   if (e.target === this) closeCounterModal();
 };
@@ -547,6 +623,7 @@ window.renderFirebaseBackupInfo = renderFirebaseBackupInfo;
 window.renderCounters = renderCounters;
 
 window.addEventListener("DOMContentLoaded", () => {
+  initFrequencyDropdown();
   if (typeof lucide !== "undefined") lucide.createIcons();
   let initialAuthResolved = false;
   initAuth(async (user) => {

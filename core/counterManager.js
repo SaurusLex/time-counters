@@ -271,6 +271,9 @@ export function renderCounters() {
             .padStart(2, "0");
           fechaStr = `${day}/${month}`;
         }
+        if (counter.date && counter.date.includes("T")) {
+          fechaStr += " " + currentOccurrenceDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+        }
         fechaStr += frequencyDisplaySuffix;
         const li = document.createElement("li");
         // NO poner data-occurrence-date en la cabecera
@@ -417,6 +420,9 @@ export function renderCounters() {
             .padStart(2, "0");
           fechaStr = `${day}/${month}`;
         }
+        if (counter.date && counter.date.includes("T")) {
+          fechaStr += " " + currentOccurrenceDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+        }
         fechaStr += frequencyDisplaySuffix;
         const li = document.createElement("li");
         li.setAttribute(
@@ -522,11 +528,14 @@ export function renderCounters() {
         diff = dateDiff(target, now);
         text = `Han pasado ${formatDiff(diff, config)}`;
       }
-      const fechaStr = target.toLocaleDateString("es-ES", {
+      let fechaStr = target.toLocaleDateString("es-ES", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
       });
+      if (counter.date && counter.date.includes("T")) {
+        fechaStr += " " + target.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+      }
       const li = document.createElement("li");
       li.setAttribute("data-original-counter-idx", originalIdx.toString());
 

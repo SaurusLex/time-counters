@@ -1,0 +1,43 @@
+/* Design Tokens - Grid base 4px */
+:root {
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-14: 56px;
+  --space-20: 80px;
+
+  /* Icon sizes */
+  --size-icon-xs: 14px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
+  --size-icon-xl: 32px;
+
+  /* Button sizes (xs, sm, md, lg) */
+  --size-btn-xs: 24px;
+  --size-btn-sm: 32px;
+  --size-btn-md: 40px;
+  --size-btn-lg: 48px;
+
+  /* Legacy (alias) */
+  --size-btn-icon: var(--size-btn-sm);
+  --size-btn-default: var(--size-btn-md);
+  --size-input: 40px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 50%;
+
+  /* Breakpoints (documentación; usar valores literales en media queries) */
+  /* --bp-sm: 500px; --bp-md: 600px; --bp-lg: 700px; */
+}

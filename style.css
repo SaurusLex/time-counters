@@ -1,3 +1,5 @@
+@import "design-tokens.css";
+
 body {
   font-family: Arial, sans-serif;
   background: #f4f4f4;
@@ -7,16 +9,16 @@ body {
 .container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 24px;
+  padding: var(--space-6);
 }
 @media (max-width: 600px) {
   .container {
     max-width: none;
     margin: 0;
-    padding: 16px;
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: var(--space-4);
+    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    padding-right: max(var(--space-4), env(safe-area-inset-right));
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
     min-height: 100vh;
     min-height: 100dvh;
     box-sizing: border-box;
@@ -24,7 +26,7 @@ body {
   h1 {
     font-size: 1.5rem;
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
     text-align: left;
   }
   .drive-btns {
@@ -50,8 +52,8 @@ body {
   ul#counters-list li {
     flex-direction: column;
     align-items: stretch;
-    padding: 14px 16px;
-    margin-bottom: 12px;
+    padding: var(--space-4) var(--space-4);
+    margin-bottom: var(--space-3);
   }
   .counter-info {
     text-align: left;
@@ -91,25 +93,39 @@ h1 {
 }
 form {
   display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
 }
 input[type="text"],
 input[type="date"],
 input[type="time"] {
   flex: 1;
-  padding: 8px;
+  padding: var(--space-2);
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
+  height: var(--size-input);
+  box-sizing: border-box;
+}
+.clear-time-btn .btn-ico {
+  margin-right: 0;
+}
+.clear-time-btn .btn-ico svg,
+.clear-time-btn svg.lucide {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  margin-right: 0 !important;
+}
+.clear-time-btn .btn-text {
+  display: none;
 }
 button {
   min-width: 140px;
-  height: 40px;
-  padding: 8px 16px;
+  height: var(--size-btn-md);
+  padding: var(--space-2) var(--space-4);
   background: #007bff;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.2s;
   line-height: 38px;
@@ -121,15 +137,49 @@ button {
 button:hover {
   background: #0056b3;
 }
+.btn--xs {
+  height: var(--size-btn-xs);
+  padding: var(--space-1) var(--space-2);
+}
+.btn--sm {
+  height: var(--size-btn-sm);
+  padding: var(--space-1) var(--space-3);
+}
+.btn--md {
+  height: var(--size-btn-md);
+  padding: var(--space-2) var(--space-4);
+}
+.btn--lg {
+  height: var(--size-btn-lg);
+  padding: var(--space-3) var(--space-5);
+}
+.btn--circle {
+  aspect-ratio: 1;
+  min-width: unset;
+  padding: 0;
+  border-radius: var(--radius-full);
+}
+.clear-time-btn .btn-ico {
+  margin-right: 0;
+}
+.clear-time-btn .btn-ico svg,
+.clear-time-btn svg.lucide {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  margin-right: 0 !important;
+}
+.clear-time-btn .btn-text {
+  display: none;
+}
 ul#counters-list {
   list-style: none;
   padding: 0;
 }
 ul#counters-list li {
   background: #ffffff;
-  margin-bottom: 14px;
-  padding: 18px 20px;
-  border-radius: 8px;
+  margin-bottom: var(--space-4);
+  padding: var(--space-5) var(--space-5);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -194,10 +244,10 @@ ul#counters-list li:hover {
   /* margin-right: 16px; */ /* Removed to allow block display */
 }
 ul#counters-list li button {
-  margin-left: 6px;
-  padding: 6px 14px;
+  margin-left: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   font-size: 0.97em;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
   transition: background 0.18s, color 0.18s;
@@ -244,7 +294,7 @@ ul#counters-list li .delete-btn:hover {
   box-sizing: border-box;
   max-height: 90vh;
   background: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
   animation: modalIn 0.18s;
   padding: 0;
@@ -260,12 +310,12 @@ ul#counters-list li .delete-btn:hover {
   }
 }
 .modal-header {
-  padding: 16px 24px 8px 24px;
+  padding: var(--space-4) var(--space-6) var(--space-2) var(--space-6);
   border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .modal-title {
   font-size: 1.2em;
@@ -278,12 +328,12 @@ ul#counters-list li .delete-btn:hover {
   cursor: pointer;
   border: none;
   background: none;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
   line-height: 1;
   transition: color 0.2s, background 0.2s;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   width: auto;
-  height: 32px;
+  height: var(--size-btn-icon);
   min-width: unset;
   min-height: unset;
   display: flex;
@@ -296,19 +346,19 @@ ul#counters-list li .delete-btn:hover {
   background: #f0f2f7;
 }
 .modal-body {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
   flex: 1 1 auto;
   background: #fff;
 }
 .modal-footer {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid #eee;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
   background: #f6f8fa;
-  border-radius: 0 0 8px 8px;
-  min-height: 56px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  min-height: var(--space-14);
   align-items: center;
   margin-top: auto;
 }
@@ -350,7 +400,7 @@ ul#counters-list li .delete-btn:hover {
 
 .bottom-sheet-grabber {
   flex-shrink: 0;
-  padding: 12px 0 8px;
+  padding: var(--space-3) 0 var(--space-2);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -371,20 +421,43 @@ ul#counters-list li .delete-btn:hover {
 
 .bottom-sheet .modal-header {
   flex-shrink: 0;
-  padding: 12px 20px 12px;
+  padding: var(--space-3) var(--space-5) var(--space-3);
   border-radius: 0;
 }
 .bottom-sheet .modal-body {
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
 }
 .bottom-sheet .modal-footer {
   flex-shrink: 0;
-  padding: 12px 20px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  padding: var(--space-3) var(--space-5);
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
   border-radius: 0;
+}
+
+.bottom-sheet-options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bottom-sheet-option {
+  padding: var(--space-4) var(--space-5);
+  font-size: 1em;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.15s;
+}
+.bottom-sheet-option:last-child {
+  border-bottom: none;
+}
+.bottom-sheet-option:hover {
+  background: #f8f9fa;
+}
+.bottom-sheet-option.selected {
+  background: #eaf4ff;
+  color: #007bff;
 }
 
 /* Popover styles */
@@ -506,14 +579,14 @@ ul#counters-list li .delete-btn:hover {
   background: #fff;
   color: #007bff;
   border: 1px solid #007bff;
-  border-radius: 4px;
-  padding: 5px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1);
   font-weight: 500;
   height: fit-content;
   cursor: pointer;
   font-size: 0.92em;
   transition: background 0.18s, color 0.18s, border 0.18s;
-  margin-left: 8px;
+  margin-left: var(--space-2);
   min-width: 0;
   min-height: 0;
   line-height: 1.2;
@@ -532,7 +605,7 @@ ul#counters-list li .delete-btn:hover {
   border: none;
   color: #888;
   font-size: 1.25em;
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   margin-left: auto;
   cursor: pointer;
   border-radius: 4px;
@@ -567,42 +640,176 @@ ul#counters-list li .delete-btn:hover {
 #counter-form-modal {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
-#counter-form-modal input[type="text"],
-#counter-form-modal input[type="date"],
-#counter-form-modal input[type="time"] {
+#counter-form-modal .form-control {
   margin-bottom: 0;
+  flex: 0 0 auto;
+}
+.form-group {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.form-group:first-of-type {
+  margin-top: 0;
+}
+.form-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-weight: 500;
+  color: #333;
+}
+.form-control {
+  width: 100%;
+  height: var(--size-input);
+  padding: var(--space-2);
+  border: 1px solid #ccc;
+  border-radius: var(--radius-sm);
+  background-color: white;
+  box-sizing: border-box;
+  font-size: 1em;
+}
+select.form-control {
+  cursor: pointer;
+  appearance: auto;
+}
+
+/* Dropdown component */
+.dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.dropdown-trigger {
+  width: 100%;
+  height: var(--size-input);
+  padding: var(--space-2);
+  border: 1px solid #ccc;
+  border-radius: var(--radius-sm);
+  background-color: white;
+  color: #333;
+  font-size: 1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  text-align: left;
+  box-sizing: border-box;
+}
+.dropdown-trigger:hover,
+.dropdown-trigger:focus {
+  background-color: white;
+  color: #333;
+}
+.dropdown-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.dropdown-trigger-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropdown-trigger-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+.dropdown-wrapper.open .dropdown-trigger-icon {
+  transform: rotate(180deg);
+}
+.dropdown-panel {
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+}
+.dropdown-option {
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 1em;
+}
+.dropdown-option:hover {
+  background: #f8f9fa;
+}
+.dropdown-option.selected {
+  background: #eaf4ff;
+  color: #007bff;
+}
+
+.date-time-row {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+#counter-form-modal .date-time-row .form-control,
+#counter-form-modal .time-input-wrapper .form-control {
+  flex: 1;
+  min-width: 0;
+}
+.time-input-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.form-hint {
+  display: none;
+  color: #555;
+  margin-top: calc(var(--space-2) * -1);
+  margin-bottom: var(--space-3);
+  font-size: 0.85em;
 }
 .tags-section {
   margin-top: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .tags-input-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  min-width: 0;
+}
+#counter-form-modal .tags-input-row .form-control {
+  flex: 1;
+  min-width: 0;
 }
 #tags-list {
   flex-wrap: wrap;
   max-width: 100%;
   word-break: break-word;
-  margin-top: 8px;
-  gap: 8px;
+  margin-top: var(--space-2);
+  gap: var(--space-2);
 }
 #tag-suggestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 16px 0 0 0;
-  padding: 14px 0 10px 0;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0 0;
+  padding: var(--space-4) 0 var(--space-3) 0;
   border-top: 1px solid #e3e3e3;
   border-bottom: 1px solid #e3e3e3;
   background: #f7fbff;
-  border-radius: 6px;
-  min-height: 38px;
+  border-radius: var(--radius-md);
+  min-height: var(--size-input);
   align-items: center;
   position: relative;
 }
@@ -633,32 +840,32 @@ ul#counters-list li .delete-btn:hover {
   height: auto;
 }
 .tag--xs {
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   font-size: 0.72em;
-  min-height: 20px;
-  border-radius: 12px;
-  gap: 4px;
+  min-height: var(--space-5);
+  border-radius: var(--radius-xl);
+  gap: var(--space-1);
 }
 .tag--sm {
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: 0.85em;
-  min-height: 22px;
-  border-radius: 14px;
-  gap: 5px;
+  min-height: var(--space-6);
+  border-radius: var(--radius-xl);
+  gap: var(--space-1);
 }
 .tag--md {
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-3);
   font-size: 1em;
-  min-height: 26px;
-  border-radius: 16px;
-  gap: 6px;
+  min-height: var(--space-7);
+  border-radius: var(--radius-xl);
+  gap: var(--space-2);
 }
 .tag--lg {
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   font-size: 1.1em;
-  min-height: 30px;
-  border-radius: 18px;
-  gap: 8px;
+  min-height: var(--space-8);
+  border-radius: var(--radius-xl);
+  gap: var(--space-2);
 }
 .tag-suggestion {
   border-style: dashed;
@@ -676,10 +883,10 @@ ul#counters-list li .delete-btn:hover {
   color: #d9534f;
   font-size: 1.15em;
   cursor: pointer;
-  margin-left: 4px;
-  padding: 0 4px;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-1);
   line-height: 1;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   width: auto;
   height: auto;
   min-width: unset;
@@ -823,7 +1030,7 @@ ul#counters-list li .delete-btn:hover {
 .btn-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   margin-right: 18px;
   margin-bottom: 6px;
@@ -1415,8 +1622,8 @@ button svg.lucide,
 .btn-warning,
 .btn-info,
 .btn-default {
-  border-radius: 4px;
-  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
   font-size: 0.95em;
   font-weight: 500;
   cursor: pointer;

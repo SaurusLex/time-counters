@@ -129,6 +129,8 @@
   window.createTag = createTag;
 
   // button.component.js
+  var VALID_SIZES2 = ["xs", "sm", "md", "lg"];
+  var VALID_SHAPES = ["default", "circle"];
   var BUTTON_COLOR_CLASSES = {
     primary: "btn-primary",
     secondary: "btn-secondary",
@@ -140,11 +142,23 @@
     auth: "btn-auth",
     default: "btn-default"
   };
+  var BUTTON_SIZE_CLASSES = {
+    xs: "btn--xs",
+    sm: "btn--sm",
+    md: "btn--md",
+    lg: "btn--lg"
+  };
+  var BUTTON_SHAPE_CLASSES = {
+    default: "",
+    circle: "btn--circle"
+  };
   function createButton({
     text = "",
     icon = null,
     onClick = null,
     color = "default",
+    size = "md",
+    shape = "default",
     className = "",
     type = "button",
     ...attrs
@@ -157,7 +171,9 @@
       btn.textContent = text;
     }
     const colorClass = BUTTON_COLOR_CLASSES[color] || BUTTON_COLOR_CLASSES.default;
-    btn.className = colorClass + (className ? " " + className : "");
+    const sizeClass = VALID_SIZES2.includes(size) ? BUTTON_SIZE_CLASSES[size] : "btn--md";
+    const shapeClass = VALID_SHAPES.includes(shape) ? BUTTON_SHAPE_CLASSES[shape] : "";
+    btn.className = [colorClass, sizeClass, shapeClass, className].filter(Boolean).join(" ");
     if (onClick) btn.onclick = onClick;
     Object.entries(attrs).forEach(([key, value]) => {
       if (key in btn) {
@@ -8679,7 +8695,7 @@
   var EventType;
   var ErrorCode;
   var Stat;
-  var Event2;
+  var Event;
   var getStatEventTarget;
   var createWebChannelTransport;
   (function() {
@@ -10707,7 +10723,7 @@
     getStatEventTarget = webchannel_blob_es2018.getStatEventTarget = function() {
       return jb();
     };
-    Event2 = webchannel_blob_es2018.Event = I;
+    Event = webchannel_blob_es2018.Event = I;
     Stat = webchannel_blob_es2018.Stat = { jb: 0, mb: 1, nb: 2, Hb: 3, Mb: 4, Jb: 5, Kb: 6, Ib: 7, Gb: 8, Lb: 9, PROXY: 10, NOPROXY: 11, Eb: 12, Ab: 13, Bb: 14, zb: 15, Cb: 16, Db: 17, fb: 18, eb: 19, gb: 20 };
     ub.NO_ERROR = 0;
     ub.TIMEOUT = 8;
@@ -16802,7 +16818,7 @@ Total Duration: ${a - u}ms`);
     static u_() {
       if (!___PRIVATE_WebChannelConnection.c_) {
         const e = getStatEventTarget();
-        __PRIVATE_unguardedEventListen(e, Event2.STAT_EVENT, ((e2) => {
+        __PRIVATE_unguardedEventListen(e, Event.STAT_EVENT, ((e2) => {
           e2.stat === Stat.PROXY ? __PRIVATE_logDebug(zt, "STAT_EVENT: detected buffering proxy") : e2.stat === Stat.NOPROXY && __PRIVATE_logDebug(zt, "STAT_EVENT: detected no buffering proxy");
         })), ___PRIVATE_WebChannelConnection.c_ = true;
       }
@@ -21051,6 +21067,9 @@ This typically indicates that your device does not have a healthy Internet conne
             const month = (currentOccurrenceDate.getMonth() + 1).toString().padStart(2, "0");
             fechaStr = `${day}/${month}`;
           }
+          if (counter.date && counter.date.includes("T")) {
+            fechaStr += " " + currentOccurrenceDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+          }
           fechaStr += frequencyDisplaySuffix;
           const li = document.createElement("li");
           li.setAttribute("data-original-counter-idx", originalIdx.toString());
@@ -21184,6 +21203,9 @@ This typically indicates that your device does not have a healthy Internet conne
             const month = (currentOccurrenceDate.getMonth() + 1).toString().padStart(2, "0");
             fechaStr = `${day}/${month}`;
           }
+          if (counter.date && counter.date.includes("T")) {
+            fechaStr += " " + currentOccurrenceDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+          }
           fechaStr += frequencyDisplaySuffix;
           const li = document.createElement("li");
           li.setAttribute(
@@ -21286,11 +21308,14 @@ This typically indicates that your device does not have a healthy Internet conne
           diff = dateDiff(target, now);
           text = `Han pasado ${formatDiff(diff, config)}`;
         }
-        const fechaStr = target.toLocaleDateString("es-ES", {
+        let fechaStr = target.toLocaleDateString("es-ES", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit"
         });
+        if (counter.date && counter.date.includes("T")) {
+          fechaStr += " " + target.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+        }
         const li = document.createElement("li");
         li.setAttribute("data-original-counter-idx", originalIdx.toString());
         let tagsHtml = "";
@@ -21708,6 +21733,188 @@ This typically indicates that your device does not have a healthy Internet conne
   };
   var bottom_sheet_component_default = BottomSheet;
 
+  // bottom-sheet-options.js
+  var MOBILE_BREAKPOINT = 600;
+  function isMobile() {
+    return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+  }
+  function showOptionsBottomSheet({ options = [], value = null, title = "Seleccionar", onSelect = null, onClose = null } = {}) {
+    if (!isMobile()) return null;
+    const list = document.createElement("ul");
+    list.className = "bottom-sheet-options-list";
+    let sheetRef = null;
+    options.forEach((opt) => {
+      const li = document.createElement("li");
+      li.className = "bottom-sheet-option";
+      li.dataset.value = String(opt.value);
+      li.textContent = opt.label;
+      if (opt.value === value) li.classList.add("selected");
+      li.addEventListener("click", () => {
+        if (typeof onSelect === "function") onSelect(opt.value, opt);
+        sheetRef?.close();
+      });
+      list.appendChild(li);
+    });
+    const header = document.createElement("div");
+    header.className = "modal-header";
+    header.innerHTML = `<span class="modal-title">${title}</span>`;
+    const sheet = new bottom_sheet_component_default({
+      header,
+      body: list,
+      footer: null,
+      closable: true,
+      onClose: () => {
+        if (typeof onClose === "function") onClose();
+      }
+    });
+    sheetRef = sheet;
+    sheet.open();
+    return sheet;
+  }
+
+  // dropdown.component.js
+  var CHEVRON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+  function createDropdown2({
+    options = [],
+    value = null,
+    placeholder = "Seleccionar...",
+    onSelect = null,
+    className = "",
+    disabled = false,
+    mobileTitle = "Seleccionar"
+  } = {}) {
+    const wrapper = document.createElement("div");
+    wrapper.className = `dropdown-wrapper ${className}`.trim();
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "dropdown-trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    if (disabled) trigger.disabled = true;
+    const triggerText = document.createElement("span");
+    triggerText.className = "dropdown-trigger-text";
+    const triggerIcon = document.createElement("span");
+    triggerIcon.className = "dropdown-trigger-icon";
+    triggerIcon.innerHTML = CHEVRON_SVG;
+    trigger.appendChild(triggerText);
+    trigger.appendChild(triggerIcon);
+    const panel = document.createElement("div");
+    panel.className = "dropdown-panel";
+    panel.setAttribute("role", "listbox");
+    panel.hidden = true;
+    const list = document.createElement("ul");
+    list.className = "dropdown-list";
+    function getSelectedOption() {
+      return options.find((opt) => opt.value === value) || null;
+    }
+    function updateTriggerText() {
+      const selected = getSelectedOption();
+      triggerText.textContent = selected ? selected.label : placeholder;
+    }
+    function positionPanel() {
+      const rect = trigger.getBoundingClientRect();
+      panel.style.position = "fixed";
+      panel.style.top = `${rect.bottom + 8}px`;
+      panel.style.left = `${rect.left}px`;
+      panel.style.minWidth = `${rect.width}px`;
+      requestAnimationFrame(() => {
+        const panelRect = panel.getBoundingClientRect();
+        let top = rect.bottom + 8;
+        let left = rect.left;
+        if (top + panelRect.height > window.innerHeight - 8) {
+          top = rect.top - panelRect.height - 8;
+        }
+        left = Math.max(8, Math.min(left, window.innerWidth - panelRect.width - 8));
+        panel.style.top = `${top}px`;
+        panel.style.left = `${left}px`;
+      });
+    }
+    function open() {
+      if (disabled) return;
+      if (isMobile()) {
+        wrapper.classList.add("open");
+        trigger.setAttribute("aria-expanded", "true");
+        showOptionsBottomSheet({
+          options,
+          value,
+          title: mobileTitle,
+          onSelect: (val, opt) => {
+            selectOption(opt);
+          },
+          onClose: onSheetClose
+        });
+        return;
+      }
+      panel.hidden = false;
+      wrapper.classList.add("open");
+      trigger.setAttribute("aria-expanded", "true");
+      positionPanel();
+      document.addEventListener("mousedown", handleOutside);
+      document.addEventListener("keydown", handleEscape);
+    }
+    function close() {
+      panel.hidden = true;
+      wrapper.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    }
+    function onSheetClose() {
+      wrapper.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+    function toggle() {
+      if (panel.hidden) open();
+      else close();
+    }
+    function handleOutside(e) {
+      if (!wrapper.contains(e.target)) close();
+    }
+    function handleEscape(e) {
+      if (e.key === "Escape") close();
+    }
+    function selectOption(opt) {
+      value = opt.value;
+      updateTriggerText();
+      list.querySelectorAll(".dropdown-option").forEach((el) => {
+        el.classList.toggle("selected", el.dataset.value === String(opt.value));
+      });
+      close();
+      if (typeof onSelect === "function") onSelect(opt.value, opt);
+    }
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggle();
+    });
+    options.forEach((opt) => {
+      const li = document.createElement("li");
+      li.className = "dropdown-option";
+      li.dataset.value = String(opt.value);
+      li.setAttribute("role", "option");
+      li.textContent = opt.label;
+      if (opt.value === value) li.classList.add("selected");
+      li.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectOption(opt);
+      });
+      list.appendChild(li);
+    });
+    panel.appendChild(list);
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(panel);
+    updateTriggerText();
+    wrapper.setValue = (newValue) => {
+      value = newValue;
+      updateTriggerText();
+      list.querySelectorAll(".dropdown-option").forEach((el) => {
+        el.classList.toggle("selected", el.dataset.value === String(newValue));
+      });
+    };
+    wrapper.getValue = () => value;
+    return wrapper;
+  }
+  window.createDropdown = createDropdown2;
+
   // index.js
   function getConfig() {
     const defaultConfig = {
@@ -21742,8 +21949,8 @@ This typically indicates that your device does not have a healthy Internet conne
     );
   }
   function showDeleteConfirm({ message, actions, anchorElement, counterName }) {
-    const isMobile = window.matchMedia("(max-width: 600px)").matches;
-    if (isMobile) {
+    const isMobile2 = window.matchMedia("(max-width: 600px)").matches;
+    if (isMobile2) {
       let msg = typeof message === "string" ? message : "";
       if (counterName) {
         msg = msg.includes("este contador") ? msg.replace("este contador", `\xAB${counterName}\xBB`) : msg.includes("Qu\xE9 deseas borrar") ? `\xBFQu\xE9 deseas borrar del contador \xAB${counterName}\xBB?` : `${msg} \xAB${counterName}\xBB`;
@@ -21829,6 +22036,30 @@ This typically indicates that your device does not have a healthy Internet conne
     const driveBtns = document.querySelector(".drive-btns");
     if (driveBtns) lucide.createIcons({ root: driveBtns });
   }
+  var clearTimeContainer = document.getElementById("clear-time-btn-container");
+  if (clearTimeContainer && window.createButton) {
+    const clearBtn = window.createButton({
+      icon: "x",
+      text: "",
+      color: "secondary",
+      size: "md",
+      shape: "circle",
+      className: "clear-time-btn",
+      type: "button",
+      title: "Quitar hora",
+      id: "clear-time-btn",
+      onClick: () => {
+        const timeInput = document.getElementById("modal-counter-time");
+        if (timeInput) {
+          timeInput.value = "";
+          updateClearTimeButtonState();
+        }
+      }
+    });
+    clearBtn.style.display = "none";
+    clearTimeContainer.appendChild(clearBtn);
+    if (typeof lucide !== "undefined") lucide.createIcons({ root: clearTimeContainer });
+  }
   var modalTags = [];
   var editingIdx = null;
   var deleteIdx = null;
@@ -21841,10 +22072,10 @@ This typically indicates that your device does not have a healthy Internet conne
     return counterModalRoot;
   }
   function openCounterModal(mode = "new", idx = null) {
-    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+    const isMobile2 = window.matchMedia("(max-width: 600px)").matches;
     const modal = document.getElementById("counter-modal");
     const modalContent = modal?.querySelector(".modal-content");
-    if (isMobile) {
+    if (isMobile2) {
       const headerEl = modalContent?.querySelector(".modal-header");
       const bodyEl = modalContent?.querySelector(".modal-body");
       const footerEl = modalContent?.querySelector(".modal-footer");
@@ -21882,17 +22113,12 @@ This typically indicates that your device does not have a healthy Internet conne
     const nameInput = root?.querySelector("#modal-counter-name");
     const dateInput = root?.querySelector("#modal-counter-date");
     const timeInput = root?.querySelector("#modal-counter-time");
-    const frequencySelect = root?.querySelector("#modal-counter-frequency");
+    const frequencyDropdown = root?.querySelector("#frequency-dropdown-container .dropdown-wrapper");
+    const frequencyHiddenInput = root?.querySelector("#modal-counter-frequency");
     const endDateGroup = root?.querySelector("#modal-end-date-group");
     const endDateInput = root?.querySelector("#modal-counter-end-date");
     const dateHint = root?.querySelector("#modal-date-hint");
-    if (!nameInput || !dateInput || !frequencySelect) return;
-    frequencySelect.onchange = function() {
-      const selectedFrequency = this.value;
-      if (dateHint) dateHint.style.display = selectedFrequency === "annual" ? "block" : "none";
-      if (endDateGroup) endDateGroup.style.display = selectedFrequency !== "none" ? "block" : "none";
-      if (selectedFrequency === "none" && endDateInput) endDateInput.value = "";
-    };
+    if (!nameInput || !dateInput || !frequencyDropdown || !frequencyHiddenInput) return;
     if (mode === "edit" && idx !== null) {
       const counters = getCounters();
       const counter = counters[idx];
@@ -21904,9 +22130,13 @@ This typically indicates that your device does not have a healthy Internet conne
           const month = String(dateObj.getMonth() + 1).padStart(2, "0");
           const day = String(dateObj.getDate()).padStart(2, "0");
           dateInput.value = `${year}-${month}-${day}`;
-          const hours = String(dateObj.getHours()).padStart(2, "0");
-          const minutes = String(dateObj.getMinutes()).padStart(2, "0");
-          timeInput.value = `${hours}:${minutes}`;
+          if (counter.date.includes("T")) {
+            const hours = String(dateObj.getHours()).padStart(2, "0");
+            const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+            timeInput.value = `${hours}:${minutes}`;
+          } else {
+            timeInput.value = "";
+          }
         } else {
           dateInput.value = counter.date;
           timeInput.value = "";
@@ -21916,9 +22146,11 @@ This typically indicates that your device does not have a healthy Internet conne
         timeInput.value = "";
       }
       modalTags = Array.isArray(counter.tags) ? [...counter.tags] : [];
-      frequencySelect.value = counter.frequency || "none";
+      const freq = counter.frequency || "none";
+      frequencyDropdown.setValue(freq);
+      frequencyHiddenInput.value = freq;
       if (endDateInput) endDateInput.value = counter.endDate || "";
-      frequencySelect.dispatchEvent(new Event("change"));
+      updateFrequencyDependentUI(root, freq);
       if (title) title.textContent = "Editar contador";
       editingIdx = idx;
     } else {
@@ -21926,15 +22158,24 @@ This typically indicates that your device does not have a healthy Internet conne
       dateInput.value = "";
       timeInput.value = "";
       modalTags = [];
-      frequencySelect.value = "none";
+      frequencyDropdown.setValue("none");
+      frequencyHiddenInput.value = "none";
       if (endDateInput) endDateInput.value = "";
-      frequencySelect.dispatchEvent(new Event("change"));
+      updateFrequencyDependentUI(root, "none");
       if (title) title.textContent = "Nuevo contador";
       editingIdx = null;
     }
     renderTagsList();
     renderTagSuggestions();
+    updateClearTimeButtonState(root);
     setTimeout(() => nameInput.focus(), 100);
+  }
+  function updateClearTimeButtonState(root) {
+    const r = root || getCounterRoot() || document;
+    const timeInput = r.querySelector?.("#modal-counter-time");
+    const clearBtn = r.querySelector?.("#clear-time-btn");
+    if (!timeInput || !clearBtn) return;
+    clearBtn.style.display = timeInput.value ? "flex" : "none";
   }
   function closeCounterModal() {
     if (counterSheetView) {
@@ -22023,8 +22264,41 @@ This typically indicates that your device does not have a healthy Internet conne
       document.getElementById("add-tag-btn").click();
     }
   });
+  var FREQUENCY_OPTIONS = [
+    { value: "none", label: "No recurrente" },
+    { value: "daily", label: "Diario" },
+    { value: "weekly", label: "Semanal" },
+    { value: "monthly", label: "Mensual" },
+    { value: "annual", label: "Anual (ej. cumplea\xF1os)" }
+  ];
+  function updateFrequencyDependentUI(root, frequency) {
+    const dateHint = root?.querySelector("#modal-date-hint");
+    const endDateGroup = root?.querySelector("#modal-end-date-group");
+    const endDateInput = root?.querySelector("#modal-counter-end-date");
+    if (dateHint) dateHint.style.display = frequency === "annual" ? "block" : "none";
+    if (endDateGroup) endDateGroup.style.display = frequency !== "none" ? "block" : "none";
+    if (frequency === "none" && endDateInput) endDateInput.value = "";
+  }
+  function initFrequencyDropdown() {
+    const container = document.getElementById("frequency-dropdown-container");
+    const hiddenInput = document.getElementById("modal-counter-frequency");
+    if (!container || !hiddenInput || typeof createDropdown !== "function") return;
+    const dropdown = createDropdown({
+      options: FREQUENCY_OPTIONS,
+      value: "none",
+      placeholder: "Seleccionar...",
+      mobileTitle: "Frecuencia",
+      className: "modal-frequency-dropdown",
+      onSelect: (value) => {
+        hiddenInput.value = value;
+        updateFrequencyDependentUI(getCounterRoot(), value);
+      }
+    });
+    container.appendChild(dropdown);
+  }
   document.getElementById("close-counter-modal").onclick = closeCounterModal;
   document.getElementById("cancel-counter-modal").onclick = closeCounterModal;
+  document.getElementById("modal-counter-time")?.addEventListener("input", () => updateClearTimeButtonState());
   document.getElementById("counter-modal").onclick = function(e) {
     if (e.target === this) closeCounterModal();
   };
@@ -22140,6 +22414,7 @@ This typically indicates that your device does not have a healthy Internet conne
   window.renderFirebaseBackupInfo = renderFirebaseBackupInfo;
   window.renderCounters = renderCounters;
   window.addEventListener("DOMContentLoaded", () => {
+    initFrequencyDropdown();
     if (typeof lucide !== "undefined") lucide.createIcons();
     let initialAuthResolved = false;
     initAuth(async (user) => {
@@ -22220,7 +22495,7 @@ This typically indicates that your device does not have a healthy Internet conne
     setInterval(updateCountersTime, 1e3);
   });
   function openConfigModal() {
-    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+    const isMobile2 = window.matchMedia("(max-width: 600px)").matches;
     const header = `
     <span class="modal-title">Configuraci\xF3n</span>
   `;
@@ -22259,7 +22534,7 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
   `;
     const footer = `<button type="button" id="close-config-modal-footer">Cerrar</button>`;
-    const view = isMobile ? new bottom_sheet_component_default({ header, body, footer, closable: true, onClose: () => {
+    const view = isMobile2 ? new bottom_sheet_component_default({ header, body, footer, closable: true, onClose: () => {
     } }) : new modal_component_default({ header, body, footer, closable: true, onClose: () => {
     } });
     view.open();

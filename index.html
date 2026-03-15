@@ -40,89 +40,41 @@
             <input
               type="text"
               id="modal-counter-name"
+              class="form-control"
               placeholder="Nombre del contador"
               required
             />
-            <input type="date" id="modal-counter-date" required />
-            <input
-              type="time"
-              id="modal-counter-time"
-              style="margin-top: 8px"
-            />
-            <small
-              id="modal-date-hint"
-              style="
-                display: none;
-                color: #555;
-                margin-top: -8px;
-                margin-bottom: 12px;
-                font-size: 0.85em;
-              "
-              >El año seleccionado será ignorado. Solo se usarán el día y el mes
-              para eventos anuales.</small
-            >
+            <div class="date-time-row">
+              <input type="date" id="modal-counter-date" class="form-control" required />
+              <div class="time-input-wrapper">
+                <input type="time" id="modal-counter-time" class="form-control" />
+                <div id="clear-time-btn-container" style="flex-shrink: 0;"></div>
+              </div>
+            </div>
+            <small id="modal-date-hint" class="form-hint">
+              El año seleccionado será ignorado. Solo se usarán el día y el mes
+              para eventos anuales.
+            </small>
 
             <!-- Frequency Selection -->
-            <div
-              class="form-group"
-              style="margin-top: 12px; margin-bottom: 12px"
-            >
-              <label
-                for="modal-counter-frequency"
-                style="
-                  display: block;
-                  margin-bottom: 4px;
-                  font-weight: 500;
-                  color: #333;
-                "
+            <div class="form-group">
+              <label for="modal-counter-frequency" class="form-label"
                 >Frecuencia:</label
               >
-              <select
-                id="modal-counter-frequency"
-                name="modal-counter-frequency"
-                style="
-                  width: 100%;
-                  padding: 8px;
-                  border: 1px solid #ccc;
-                  border-radius: 4px;
-                  background-color: white;
-                  height: 38px;
-                "
-              >
-                <option value="none">No recurrente</option>
-                <option value="daily">Diario</option>
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensual</option>
-                <option value="annual">Anual (ej. cumpleaños)</option>
-              </select>
+              <div id="frequency-dropdown-container"></div>
+              <input type="hidden" id="modal-counter-frequency" name="modal-counter-frequency" value="none" />
             </div>
 
             <!-- End Date for Recurring Events -->
-            <div
-              id="modal-end-date-group"
-              class="form-group"
-              style="display: none; margin-bottom: 12px"
-            >
-              <label
-                for="modal-counter-end-date"
-                style="
-                  display: block;
-                  margin-bottom: 4px;
-                  font-weight: 500;
-                  color: #333;
-                "
+            <div id="modal-end-date-group" class="form-group" style="display: none;">
+              <label for="modal-counter-end-date" class="form-label"
                 >Fecha de finalización (opcional):</label
               >
               <input
                 type="date"
                 id="modal-counter-end-date"
                 name="modal-counter-end-date"
-                style="
-                  width: 100%;
-                  padding: 8px;
-                  border: 1px solid #ccc;
-                  border-radius: 4px;
-                "
+                class="form-control"
               />
             </div>
 
@@ -131,6 +83,7 @@
                 <input
                   type="text"
                   id="tag-input"
+                  class="form-control"
                   placeholder="Añadir etiqueta"
                 />
                 <button type="button" id="add-tag-btn">Añadir</button>
