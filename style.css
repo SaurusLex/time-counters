@@ -128,11 +128,12 @@ button {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.2s;
-  line-height: 38px;
+  line-height: 1;
   vertical-align: middle;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 button:hover {
   background: #0056b3;
@@ -1006,25 +1007,141 @@ select.form-control {
   align-items: center;
   justify-content: flex-start;
 }
-.drive-btns button {
-  min-width: unset;
-  padding: 7px 12px;
-  font-size: 0.98em;
-  height: auto;
-  line-height: 1;
-  margin-bottom: 0;
-  white-space: nowrap;
-  gap: 6px;
+
+/* Auth status indicator pill */
+#auth-status-indicator {
+  display: inline-flex;
+  margin-left: auto;
 }
+.auth-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border 0.18s;
+  box-sizing: border-box;
+  line-height: 1;
+}
+.pill--xs {
+  height: var(--size-btn-xs);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.72em;
+  border-radius: var(--radius-sm);
+  gap: var(--space-1);
+}
+.pill--sm {
+  height: var(--size-btn-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.85em;
+  border-radius: var(--radius-sm);
+  gap: var(--space-1);
+}
+.pill--md {
+  height: var(--size-btn-md);
+  padding: var(--space-2) var(--space-4);
+  font-size: 1em;
+  border-radius: var(--radius-sm);
+  gap: var(--space-2);
+}
+.pill--lg {
+  height: var(--size-btn-lg);
+  padding: var(--space-3) var(--space-5);
+  font-size: 1em;
+  border-radius: var(--radius-md);
+  gap: var(--space-2);
+}
+.pill--xl {
+  height: var(--space-14);
+  padding: var(--space-4) var(--space-6);
+  font-size: 1.05em;
+  border-radius: var(--radius-md);
+  gap: var(--space-3);
+}
+.auth-status-pill.signed-in {
+  background: #eaffea;
+  color: #28a745;
+  border: 1px solid #b6f6b6;
+}
+.auth-status-pill.signed-in:hover {
+  background: #d4f8d4;
+  color: #1e7e34;
+}
+.auth-status-pill.signed-out {
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #e0e0e0;
+}
+.auth-status-pill.signed-out:hover {
+  background: #ebebeb;
+  color: #555;
+}
+.auth-status-pill svg {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+.auth-pill-loading {
+  cursor: wait;
+  pointer-events: none;
+}
+.auth-pill-loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Auth pill dropdown */
+.auth-pill-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+.auth-pill-dropdown-panel {
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.auth-pill-dropdown-panel[hidden] {
+  display: none !important;
+}
+.auth-pill-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95em;
+  color: #333;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s;
+}
+.auth-pill-dropdown-option:hover {
+  background: #f5f5f5;
+}
+.auth-pill-dropdown-option svg {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+}
+
 @media (max-width: 700px) {
   .drive-btns {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  .drive-btns button {
+  .auth-status-pill {
     width: 100%;
-    text-align: left;
+    justify-content: center;
   }
 }
 .btn-group {
@@ -1032,8 +1149,6 @@ select.form-control {
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-  margin-right: 18px;
-  margin-bottom: 6px;
 }
 .auth-group {
   border-right: 2px solid #e3e3e3;
@@ -1101,12 +1216,6 @@ select.form-control {
   background: #0056b3;
   color: #fff;
 }
-.drive-btns .btn-ico {
-  margin-right: 0;
-}
-.drive-btns .btn-ico svg {
-  margin-right: 0;
-}
 .btn-ico {
   font-size: 1.15em;
   display: inline-flex;
@@ -1149,7 +1258,6 @@ button svg.lucide,
     border-bottom: none;
     padding-right: 0;
     padding-bottom: 0;
-    margin-right: 0;
   }
 }
 .modern-modal-content {

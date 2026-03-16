@@ -1,11 +1,13 @@
 // Asegura que window.createTag está disponible
 import "./tag.component.js";
 import "./button.component.js";
+import "./pill.component.js";
 import {
   initAuth,
   handleLoginClick,
   handleLogoutClick,
   isSignedIn,
+  getCurrentUser,
 } from "./firebase-auth.js";
 import {
   backupToFirestore,
@@ -28,6 +30,7 @@ import {
   addOrUpdateCounter,
 } from "./core/counterManager.js"; // Import addOrUpdateCounter
 import { showPopover, closePopover } from "./popover.js";
+import { showOptionsBottomSheet, isMobile } from "./bottom-sheet-options.js";
 import Modal from "./modal.component.js";
 import BottomSheet from "./bottom-sheet.component.js";
 import "./dropdown.component.js";
@@ -149,7 +152,6 @@ document.body.insertAdjacentHTML("beforeend", toastHtml);
 
 // Crear botones de header con el componente createButton
 const addBtnContainer = document.getElementById("add-button-container");
-const configBtnContainer = document.getElementById("config-button-container");
 if (addBtnContainer) {
   const addBtn = window.createButton({
     text: "Añadir contador",
@@ -159,16 +161,6 @@ if (addBtnContainer) {
     onClick: () => openCounterModal("new"),
   });
   addBtnContainer.appendChild(addBtn);
-}
-if (configBtnContainer) {
-  const configBtn = window.createButton({
-    text: "Configuración",
-    icon: "settings",
-    color: "auth",
-    id: "open-config-modal",
-    onClick: openConfigModal,
-  });
-  configBtnContainer.appendChild(configBtn);
 }
 if (typeof lucide !== "undefined") {
   const driveBtns = document.querySelector(".drive-btns");
@@ -622,9 +614,134 @@ function renderFilterTags() {
 window.renderFirebaseBackupInfo = renderFirebaseBackupInfo;
 window.renderCounters = renderCounters;
 
+let authStateResolved = false;
+
+function renderAuthStatusIndicator() {
+  const container = document.getElementById("auth-status-indicator");
+  if (!container) return;
+  const loading = !authStateResolved;
+  const user = getCurrentUser();
+  const signedIn = isSignedIn();
+  const text = loading
+    ? "Cargando…"
+    : signedIn
+      ? (user?.displayName || user?.email || "Conectado")
+      : "Iniciar sesión";
+  const pill = window.createPill({
+    text,
+    icon: loading ? "loader" : signedIn ? "cloud" : "cloud-off",
+    variant: loading ? "signed-out" : signedIn ? "signed-in" : "signed-out",
+    size: "md",
+    ariaLabel: loading ? "Comprobando sesión…" : `Estado de sesión: ${text}`,
+    title: text,
+  });
+  if (loading) pill.classList.add("auth-pill-loading");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "auth-pill-dropdown";
+  wrapper.appendChild(pill);
+
+  const panel = document.createElement("div");
+  panel.className = "auth-pill-dropdown-panel";
+  panel.hidden = true;
+
+  const options = signedIn
+    ? [
+        { id: "config", label: "Configuración", icon: "settings", action: () => openConfigModal() },
+        { id: "logout", label: "Cerrar sesión", icon: "log-out", action: () => handleLogoutClick() },
+      ]
+    : [
+        { id: "config", label: "Configuración", icon: "settings", action: () => openConfigModal() },
+        { id: "login", label: "Iniciar sesión", icon: "log-in", action: () => handleLoginClick() },
+      ];
+
+  options.forEach((opt) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "auth-pill-dropdown-option";
+    btn.innerHTML = `<i data-lucide="${opt.icon}"></i><span>${opt.label}</span>`;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      closePanel();
+      opt.action();
+    };
+    panel.appendChild(btn);
+  });
+
+  function positionPanel() {
+    const rect = pill.getBoundingClientRect();
+    panel.style.position = "fixed";
+    panel.style.top = `${rect.bottom + 8}px`;
+    panel.style.left = `${rect.right - 200}px`;
+    panel.style.minWidth = "180px";
+    requestAnimationFrame(() => {
+      const panelRect = panel.getBoundingClientRect();
+      let top = rect.bottom + 8;
+      let left = rect.right - panelRect.width;
+      if (top + panelRect.height > window.innerHeight - 8) top = rect.top - panelRect.height - 8;
+      if (left < 8) left = 8;
+      if (left + panelRect.width > window.innerWidth - 8) left = window.innerWidth - panelRect.width - 8;
+      panel.style.top = `${top}px`;
+      panel.style.left = `${left}px`;
+    });
+  }
+
+  function openPanel() {
+    panel.hidden = false;
+    wrapper.classList.add("open");
+    positionPanel();
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+  }
+
+  function closePanel() {
+    panel.hidden = true;
+    wrapper.classList.remove("open");
+    document.removeEventListener("mousedown", handleOutside);
+    document.removeEventListener("keydown", handleEscape);
+  }
+
+  function handleOutside(e) {
+    if (!wrapper.contains(e.target)) closePanel();
+  }
+
+  function handleEscape(e) {
+    if (e.key === "Escape") closePanel();
+  }
+
+  pill.onclick = (e) => {
+    e.stopPropagation();
+    if (loading) return;
+    if (isMobile()) {
+      showOptionsBottomSheet({
+        options: options.map((o) => ({ value: o.id, label: o.label })),
+        value: null,
+        title: text,
+        onSelect: (val, opt) => {
+          const selected = options.find((x) => x.id === val);
+          if (selected) selected.action();
+        },
+      });
+    } else {
+      if (panel.hidden) openPanel();
+      else closePanel();
+    }
+  };
+
+  wrapper.appendChild(panel);
+  container.innerHTML = "";
+  container.appendChild(wrapper);
+  if (typeof lucide !== "undefined") lucide.createIcons({ root: wrapper });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   initFrequencyDropdown();
   if (typeof lucide !== "undefined") lucide.createIcons();
+  const authChangedHandler = () => {
+    authStateResolved = true;
+    renderAuthStatusIndicator();
+  };
+  document.addEventListener("firebase-auth-changed", authChangedHandler);
   let initialAuthResolved = false;
   initAuth(async (user) => {
     if (user && !initialAuthResolved) {
@@ -634,6 +751,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     initialAuthResolved = true;
   });
+  renderAuthStatusIndicator();
   // Configuración de formulario y UI
   const config = getConfig();
   renderFilterTags();
@@ -742,7 +860,7 @@ function openConfigModal() {
     </div>
     <div id="firebase-section" class="units-section-modal units-section-box" style="margin-top: 22px">
       <div class="units-section-title">
-        <i data-lucide="cloud" style="margin-right: 7px"></i>Sincronización con Firebase
+        <i data-lucide="log-in" style="margin-right: 7px"></i><span id="account-section-title">Iniciar sesión</span>
       </div>
       <div id="firebase-auth-area"></div>
     </div>
@@ -802,10 +920,18 @@ function openConfigModal() {
     });
   }
 
-  // Sección Firebase: login, backup, restore
+  // Sección cuenta: login, backup, restore (Firebase en backend, caja negra para el usuario)
   function renderFirebaseAuthArea() {
     const area = root.querySelector("#firebase-auth-area");
+    const titleEl = root.querySelector("#account-section-title");
+    const sectionTitle = root.querySelector("#firebase-section .units-section-title");
     if (!area) return;
+    if (titleEl) titleEl.textContent = isSignedIn() ? "Tu cuenta" : "Iniciar sesión";
+    if (sectionTitle) {
+      const icon = sectionTitle.querySelector("i");
+      if (icon) icon.setAttribute("data-lucide", isSignedIn() ? "user" : "log-in");
+      if (typeof lucide !== "undefined") lucide.createIcons({ root: sectionTitle });
+    }
     area.innerHTML = "";
     if (isSignedIn()) {
       const btnFullWidth = "100%";
