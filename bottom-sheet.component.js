@@ -101,6 +101,32 @@ class BottomSheet {
     this.overlay.addEventListener('click', (e) => {
       if (e.target === this.overlay && this.closable) this.close();
     });
+
+    this._viewportHandler = null;
+  }
+
+  _onVisualViewportResize() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    this.overlay.style.top = `${vv.offsetTop}px`;
+    this.overlay.style.left = `${vv.offsetLeft}px`;
+    this.overlay.style.width = `${vv.width}px`;
+    this.overlay.style.height = `${vv.height}px`;
+    this.sheet.style.maxHeight = `${Math.round(vv.height * 0.85)}px`;
+  }
+
+  _bindVisualViewport() {
+    if (!window.visualViewport) return;
+    this._viewportHandler = () => this._onVisualViewportResize();
+    window.visualViewport.addEventListener('resize', this._viewportHandler);
+    window.visualViewport.addEventListener('scroll', this._viewportHandler);
+  }
+
+  _unbindVisualViewport() {
+    if (!window.visualViewport || !this._viewportHandler) return;
+    window.visualViewport.removeEventListener('resize', this._viewportHandler);
+    window.visualViewport.removeEventListener('scroll', this._viewportHandler);
+    this._viewportHandler = null;
   }
 
   _setupGrabberDrag(grabber) {
@@ -182,11 +208,14 @@ class BottomSheet {
 
   open() {
     this._lockBodyScroll();
+    this._bindVisualViewport();
+    this._onVisualViewportResize();
     this.overlay.style.visibility = 'visible';
     this.overlay.style.opacity = '1';
   }
 
   close() {
+    this._unbindVisualViewport();
     this.overlay.style.opacity = '0';
     setTimeout(() => {
       this._unlockBodyScroll();
@@ -196,6 +225,7 @@ class BottomSheet {
   }
 
   destroy() {
+    this._unbindVisualViewport();
     this.overlay.remove();
   }
 }
