@@ -103,6 +103,28 @@ class BottomSheet {
     });
 
     this._viewportHandler = null;
+    this._focusResizeTimeouts = [];
+    this.sheet.addEventListener('focusin', (e) => {
+      const t = e.target;
+      if (t && (t.matches?.('input, textarea, [contenteditable="true"]'))) {
+        this._scheduleViewportResizeOnFocus();
+      }
+    });
+  }
+
+  _scheduleViewportResizeOnFocus() {
+    this._clearFocusResizeTimeouts();
+    const delays = [100, 250, 450];
+    this._focusResizeTimeouts = delays.map((d) =>
+      setTimeout(() => this._onVisualViewportResize(), d)
+    );
+  }
+
+  _clearFocusResizeTimeouts() {
+    if (this._focusResizeTimeouts) {
+      this._focusResizeTimeouts.forEach((id) => clearTimeout(id));
+      this._focusResizeTimeouts = [];
+    }
   }
 
   _onVisualViewportResize() {
@@ -123,6 +145,7 @@ class BottomSheet {
   }
 
   _unbindVisualViewport() {
+    this._clearFocusResizeTimeouts();
     if (!window.visualViewport || !this._viewportHandler) return;
     window.visualViewport.removeEventListener('resize', this._viewportHandler);
     window.visualViewport.removeEventListener('scroll', this._viewportHandler);
