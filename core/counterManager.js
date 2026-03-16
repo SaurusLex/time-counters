@@ -1,6 +1,8 @@
 import {
   dateDiff,
   formatDiff,
+  formatDateDisplay,
+  isFirstValueSingular,
   getNextOccurrence as getNextOccurrenceFromUtils,
   advanceDateByFrequency as advanceDateByFrequencyFromUtils,
 } from "../utils/dateUtils.js";
@@ -233,13 +235,15 @@ export function renderCounters() {
 
       // --- NUEVO: Renderizar la cabecera de la serie (sin data-occurrence-date) ---
       if (currentOccurrenceDate) {
-        let diff, text;
+        let diff, diffText, text;
         if (now < currentOccurrenceDate) {
           diff = dateDiff(now, currentOccurrenceDate);
-          text = `Quedan ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: now, to: currentOccurrenceDate });
+          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(currentOccurrenceDate, now);
-          text = `Pasó hace ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: currentOccurrenceDate, to: now });
+          text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
         let frequencyDisplaySuffix = "";
         switch (counter.frequency) {
@@ -256,24 +260,10 @@ export function renderCounters() {
             frequencyDisplaySuffix = " (Anual)";
             break;
         }
-        let fechaStr = currentOccurrenceDate.toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
+        let fechaStr = formatDateDisplay(currentOccurrenceDate, config.dateFormat || "dd/MM/yyyy", {
+          shortForAnnual: counter.frequency === "annual",
+          includeTime: !!(counter.date && counter.date.includes("T")),
         });
-        if (counter.frequency === "annual") {
-          const day = currentOccurrenceDate
-            .getDate()
-            .toString()
-            .padStart(2, "0");
-          const month = (currentOccurrenceDate.getMonth() + 1)
-            .toString()
-            .padStart(2, "0");
-          fechaStr = `${day}/${month}`;
-        }
-        if (counter.date && counter.date.includes("T")) {
-          fechaStr += " " + currentOccurrenceDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-        }
         fechaStr += frequencyDisplaySuffix;
         const li = document.createElement("li");
         // NO poner data-occurrence-date en la cabecera
@@ -382,13 +372,15 @@ export function renderCounters() {
         if (endDate && currentOccurrenceDate > endDate) {
           break;
         }
-        let diff, text;
+        let diff, diffText, text;
         if (now < currentOccurrenceDate) {
           diff = dateDiff(now, currentOccurrenceDate);
-          text = `Quedan ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: now, to: currentOccurrenceDate });
+          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(currentOccurrenceDate, now);
-          text = `Pasó hace ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: currentOccurrenceDate, to: now });
+          text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
         let frequencyDisplaySuffix = "";
         switch (counter.frequency) {
@@ -405,24 +397,10 @@ export function renderCounters() {
             frequencyDisplaySuffix = " (Anual)";
             break;
         }
-        let fechaStr = currentOccurrenceDate.toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
+        let fechaStr = formatDateDisplay(currentOccurrenceDate, config.dateFormat || "dd/MM/yyyy", {
+          shortForAnnual: counter.frequency === "annual",
+          includeTime: !!(counter.date && counter.date.includes("T")),
         });
-        if (counter.frequency === "annual") {
-          const day = currentOccurrenceDate
-            .getDate()
-            .toString()
-            .padStart(2, "0");
-          const month = (currentOccurrenceDate.getMonth() + 1)
-            .toString()
-            .padStart(2, "0");
-          fechaStr = `${day}/${month}`;
-        }
-        if (counter.date && counter.date.includes("T")) {
-          fechaStr += " " + currentOccurrenceDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-        }
         fechaStr += frequencyDisplaySuffix;
         const li = document.createElement("li");
         li.setAttribute(
@@ -523,19 +501,16 @@ export function renderCounters() {
 
       if (now < target) {
         diff = dateDiff(now, target);
-        text = `Quedan ${formatDiff(diff, config)}`;
+        const diffText = formatDiff(diff, config, { from: now, to: target });
+        text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
       } else {
         diff = dateDiff(target, now);
-        text = `Han pasado ${formatDiff(diff, config)}`;
+        const diffText = formatDiff(diff, config, { from: target, to: now });
+        text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
       }
-      let fechaStr = target.toLocaleDateString("es-ES", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
+      let fechaStr = formatDateDisplay(target, config.dateFormat || "dd/MM/yyyy", {
+        includeTime: !!(counter.date && counter.date.includes("T")),
       });
-      if (counter.date && counter.date.includes("T")) {
-        fechaStr += " " + target.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-      }
       const li = document.createElement("li");
       li.setAttribute("data-original-counter-idx", originalIdx.toString());
 
@@ -651,22 +626,22 @@ export function updateCountersTime() {
               timeSpan.textContent = "Evento concluido";
               const dateSpan = liElement.querySelector(".counter-date");
               if (dateSpan)
-                dateSpan.textContent = `(Terminó el ${globalEndDate.toLocaleDateString(
-                  "es-ES"
-                )})`;
+                dateSpan.textContent = `(Terminó el ${formatDateDisplay(globalEndDate, config.dateFormat || "dd/MM/yyyy")})`;
             }
           }
           occurrenceRenderIdx++;
           continue;
         }
 
-        let diff, text;
+        let diff, diffText, text;
         if (now < occurrenceDate) {
           diff = dateDiff(now, occurrenceDate);
-          text = `Quedan ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: now, to: occurrenceDate });
+          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(occurrenceDate, now);
-          text = `Pasó hace ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: occurrenceDate, to: now });
+          text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
         timeSpan.textContent = text;
         occurrenceRenderIdx++;
@@ -676,13 +651,15 @@ export function updateCountersTime() {
       const timeSpan = _getCounterTimeElement(originalIdx, null); // null for non-recurring occurrence index
       if (timeSpan) {
         const target = new Date(counter.date);
-        let diff, text;
+        let diff, diffText, text;
         if (now < target) {
           diff = dateDiff(now, target);
-          text = `Quedan ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: now, to: target });
+          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(target, now);
-          text = `Han pasado ${formatDiff(diff, config)}`;
+          diffText = formatDiff(diff, config, { from: target, to: now });
+          text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
         }
         timeSpan.textContent = text;
       }

@@ -2,6 +2,7 @@
 import "./tag.component.js";
 import "./button.component.js";
 import "./pill.component.js";
+import "./avatar.component.js";
 import {
   initAuth,
   handleLoginClick,
@@ -17,6 +18,8 @@ import {
 import {
   dateDiff,
   formatDiff,
+  formatDateDisplay,
+  DATE_FORMAT_OPTIONS,
   getNextOccurrence,
   advanceDateByFrequency,
 } from "./utils/dateUtils.js";
@@ -44,13 +47,14 @@ function getConfig() {
     hours: true,
     minutes: true,
     seconds: true,
+    dateFormat: "dd/MM/yyyy",
   };
   const saved = JSON.parse(
     localStorage.getItem("config") || JSON.stringify(defaultConfig)
   );
   // Ignorar cualquier clave antigua relacionada con Drive
   delete saved.driveSync;
-  return saved;
+  return { ...defaultConfig, ...saved };
 }
 
 function saveConfig(config) {
@@ -627,19 +631,31 @@ function renderAuthStatusIndicator() {
     : signedIn
       ? (user?.displayName || user?.email || "Conectado")
       : "Iniciar sesión";
-  const pill = window.createPill({
-    text,
-    icon: loading ? "loader" : signedIn ? "cloud" : "cloud-off",
-    variant: loading ? "signed-out" : signedIn ? "signed-in" : "signed-out",
-    size: "md",
-    ariaLabel: loading ? "Comprobando sesión…" : `Estado de sesión: ${text}`,
-    title: text,
-  });
-  if (loading) pill.classList.add("auth-pill-loading");
+
+  let trigger;
+  if (signedIn || loading) {
+    trigger = window.createAvatar({
+      name: user?.displayName || user?.email || "",
+      size: "md",
+      className: "auth-avatar-trigger",
+    });
+    trigger.setAttribute("aria-label", loading ? "Comprobando sesión…" : `Estado de sesión: ${text}`);
+    trigger.setAttribute("title", text);
+    if (loading) trigger.classList.add("auth-avatar-loading");
+  } else {
+    trigger = window.createPill({
+      text: "Iniciar sesión",
+      icon: "cloud-off",
+      variant: "signed-out",
+      size: "md",
+      ariaLabel: `Estado de sesión: ${text}`,
+      title: text,
+    });
+  }
 
   const wrapper = document.createElement("div");
   wrapper.className = "auth-pill-dropdown";
-  wrapper.appendChild(pill);
+  wrapper.appendChild(trigger);
 
   const panel = document.createElement("div");
   panel.className = "auth-pill-dropdown-panel";
@@ -669,7 +685,7 @@ function renderAuthStatusIndicator() {
   });
 
   function positionPanel() {
-    const rect = pill.getBoundingClientRect();
+    const rect = trigger.getBoundingClientRect();
     panel.style.position = "fixed";
     panel.style.top = `${rect.bottom + 8}px`;
     panel.style.left = `${rect.right - 200}px`;
@@ -709,7 +725,7 @@ function renderAuthStatusIndicator() {
     if (e.key === "Escape") closePanel();
   }
 
-  pill.onclick = (e) => {
+  trigger.onclick = (e) => {
     e.stopPropagation();
     if (loading) return;
     if (isMobile()) {
@@ -846,6 +862,12 @@ function openConfigModal() {
       </div>
       <div id="units-preview" class="units-preview"></div>
     </div>
+    <div id="date-format-section" class="units-section-modal units-section-box" style="margin-top: 22px">
+      <div class="units-section-title">
+        <i data-lucide="calendar" style="margin-right: 7px"></i>Formato de fecha
+      </div>
+      <div id="date-format-dropdown-container"></div>
+    </div>
     <div class="units-section-modal units-section-box" style="margin-top: 22px">
       <div class="units-section-title">
         <i data-lucide="file-spreadsheet" style="margin-right: 7px; color: #1d6f42"></i>Importar / Exportar
@@ -892,7 +914,13 @@ function openConfigModal() {
       minutes: 30,
       seconds: 15,
     };
-    const text = formatDiff(fakeDiff, cfg);
+    const fakeFrom = new Date(2020, 0, 1, 0, 0, 0);
+    const fakeTo = new Date(fakeFrom);
+    fakeTo.setFullYear(fakeTo.getFullYear() + 2);
+    fakeTo.setMonth(fakeTo.getMonth() + 5);
+    fakeTo.setDate(fakeTo.getDate() + 12);
+    fakeTo.setHours(4, 30, 15, 0);
+    const text = formatDiff(fakeDiff, cfg, { from: fakeFrom, to: fakeTo });
     unitsPreview.textContent = `Ejemplo: ${text}`;
   }
 
@@ -918,6 +946,28 @@ function openConfigModal() {
         renderUnitsPreview(cfg);
       });
     });
+  }
+
+  // Dropdown de formato de fecha (usa la config actual para mostrar la opción seleccionada)
+  const dateFormatContainer = root.querySelector("#date-format-dropdown-container");
+  if (dateFormatContainer && typeof window.createDropdown === "function") {
+    dateFormatContainer.innerHTML = "";
+    const dateFormatOptions = DATE_FORMAT_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+    const validValues = dateFormatOptions.map((o) => o.value);
+    const currentFormat = validValues.includes(config.dateFormat) ? config.dateFormat : "dd/MM/yyyy";
+    const dropdown = window.createDropdown({
+      options: dateFormatOptions,
+      value: currentFormat,
+      placeholder: "Formato de fecha",
+      mobileTitle: "Formato de fecha",
+      onSelect: (value) => {
+        const cfg = getConfig();
+        cfg.dateFormat = value;
+        saveConfig(cfg);
+        renderCounters();
+      },
+    });
+    dateFormatContainer.appendChild(dropdown);
   }
 
   // Sección cuenta: login, backup, restore (Firebase en backend, caja negra para el usuario)

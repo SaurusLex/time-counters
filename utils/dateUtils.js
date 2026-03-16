@@ -29,7 +29,113 @@ export function dateDiff(from, to) {
   return { years, months, days, hours, minutes, seconds };
 }
 
-export function formatDiff(diff, config) {
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+const MS_PER_MONTH = 30.44 * MS_PER_DAY;
+const MS_PER_YEAR = 365.25 * MS_PER_DAY;
+
+const UNIT_ORDER = ["years", "months", "days", "hours", "minutes", "seconds"];
+const MS_PER_UNIT = {
+  years: MS_PER_YEAR,
+  months: MS_PER_MONTH,
+  days: MS_PER_DAY,
+  hours: MS_PER_HOUR,
+  minutes: MS_PER_MINUTE,
+  seconds: MS_PER_SECOND,
+};
+const UNIT_LABELS = {
+  years: (n) => (n !== 1 ? "años" : "año"),
+  months: (n) => (n !== 1 ? "meses" : "mes"),
+  days: (n) => (n !== 1 ? "días" : "día"),
+  hours: (n) => (n !== 1 ? "horas" : "hora"),
+  minutes: (n) => (n !== 1 ? "minutos" : "minuto"),
+  seconds: (n) => (n !== 1 ? "segundos" : "segundo"),
+};
+
+function getActiveUnits(config) {
+  return UNIT_ORDER.filter((u) => config[u]);
+}
+
+/** Formatos de fecha más comunes en España (2026) */
+export const DATE_FORMAT_OPTIONS = [
+  { value: "dd/MM/yyyy", label: "16/03/2026 (DD/MM/AAAA)", sep: "/" },
+  { value: "dd-MM-yyyy", label: "16-03-2026 (DD-MM-AAAA)", sep: "-" },
+  { value: "dd/MM/yy", label: "16/03/26 (DD/MM/AA)", sep: "/" },
+];
+
+/**
+ * Formatea una fecha según el formato seleccionado.
+ * @param {Date} date - Fecha a formatear
+ * @param {string} formatKey - Clave del formato (ej: "dd/MM/yyyy")
+ * @param {object} opts - { includeTime: boolean, shortForAnnual: boolean }
+ */
+export function formatDateDisplay(date, formatKey = "dd/MM/yyyy", opts = {}) {
+  const { includeTime = false, shortForAnnual = false } = opts;
+  const d = date.getDate().toString().padStart(2, "0");
+  const M = (date.getMonth() + 1).toString().padStart(2, "0");
+  const y = date.getFullYear();
+  const yy = y.toString().slice(-2);
+
+  let dateStr;
+  switch (formatKey) {
+    case "dd-MM-yyyy":
+      dateStr = `${d}-${M}-${y}`;
+      break;
+    case "dd/MM/yy":
+      dateStr = `${d}/${M}/${yy}`;
+      break;
+    case "dd/MM/yyyy":
+    default:
+      dateStr = `${d}/${M}/${y}`;
+      break;
+  }
+
+  if (shortForAnnual) {
+    return `${d}/${M}`;
+  }
+  if (includeTime) {
+    const timeStr = date.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${dateStr} ${timeStr}`;
+  }
+  return dateStr;
+}
+
+/** Devuelve true si el texto formateado empieza con "1 " (primera cantidad singular) */
+export function isFirstValueSingular(formattedDiff) {
+  return /^1\s/.test(formattedDiff);
+}
+
+export function formatDiff(diff, config, dates = null) {
+  const activeUnits = getActiveUnits(config);
+  const hasDates =
+    dates && dates.from instanceof Date && dates.to instanceof Date;
+
+  if (activeUnits.length > 0 && hasDates) {
+    let ms = Math.abs(dates.to.getTime() - dates.from.getTime());
+    const parts = [];
+    for (const unit of UNIT_ORDER) {
+      if (!activeUnits.includes(unit)) continue;
+      const msPer = MS_PER_UNIT[unit];
+      const isSeconds = unit === "seconds";
+      const value = isSeconds ? Math.round(ms / msPer) : Math.floor(ms / msPer);
+      if (value > 0 || (isSeconds && parts.length === 0)) {
+        parts.push(`${value} ${UNIT_LABELS[unit](value)}`);
+      }
+      ms -= value * msPer;
+      if (ms < 0) ms = 0;
+    }
+    if (parts.length > 0) {
+      if (parts.length === 1) return parts[0];
+      if (parts.length === 2) return parts.join(" y ");
+      return parts.slice(0, -1).join(", ") + " y " + parts[parts.length - 1];
+    }
+  }
+
   let parts = [];
   if (config.years && diff.years)
     parts.push(`${diff.years} año${diff.years !== 1 ? "s" : ""}`);
