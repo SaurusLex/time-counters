@@ -1,6 +1,7 @@
 // Componente para crear avatares con acrónimo del nombre
 // Uso: createAvatar({ name, color, size, className })
 // size: "xs" | "sm" | "md" | "lg"
+// Estilos: components/avatar/avatar.css (cargado en index.html)
 
 const VALID_SIZES = ["xs", "sm", "md", "lg"];
 const AVATAR_SIZE_CLASSES = {

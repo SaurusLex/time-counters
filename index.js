@@ -1,8 +1,8 @@
 // Asegura que window.createTag está disponible
-import "./tag.component.js";
-import "./button.component.js";
-import "./pill.component.js";
-import "./avatar.component.js";
+import "./components/tag.component.js";
+import "./components/button/button.component.js";
+import "./components/pill.component.js";
+import "./components/avatar/avatar.component.js";
 import {
   initAuth,
   handleLoginClick,
@@ -32,11 +32,11 @@ import {
   deleteCounter as deleteCounterFromManager,
   addOrUpdateCounter,
 } from "./core/counterManager.js"; // Import addOrUpdateCounter
-import { showPopover, closePopover } from "./popover.js";
-import { showOptionsBottomSheet, isMobile } from "./bottom-sheet-options.js";
-import Modal from "./modal.component.js";
-import BottomSheet from "./bottom-sheet.component.js";
-import "./dropdown.component.js";
+import { showPopover, closePopover } from "./components/popover.js";
+import { showOptionsBottomSheet, isMobile } from "./components/bottom-sheet-options.js";
+import Modal from "./components/modal.component.js";
+import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
+import "./components/dropdown.component.js";
 
 
 function getConfig() {
@@ -63,6 +63,24 @@ function saveConfig(config) {
 
 function getFilterTags() {
   return currentFilterTags;
+}
+
+function getSortOrder() {
+  const saved = localStorage.getItem("countersSortOrder");
+  return saved === "oldest" ? "oldest" : "recent";
+}
+
+function saveSortOrder(value) {
+  localStorage.setItem("countersSortOrder", value);
+}
+
+function getTimeFilter() {
+  const saved = localStorage.getItem("countersTimeFilter");
+  return saved === "past" || saved === "future" ? saved : "all";
+}
+
+function saveTimeFilter(value) {
+  localStorage.setItem("countersTimeFilter", value);
 }
 
 function getDomListElement() {
@@ -130,6 +148,8 @@ function showDeleteConfirm({ message, actions, anchorElement, counterName }) {
 initCounterManager({
   getConfig,
   getFilterTags,
+  getSortOrder,
+  getTimeFilter,
   openCounterModal,
   renderFilterTags,
   getDomListElement,
@@ -457,6 +477,53 @@ function initFrequencyDropdown() {
   container.appendChild(dropdown);
 }
 
+const SORT_OPTIONS = [
+  { value: "recent", label: "Más reciente primero" },
+  { value: "oldest", label: "Más antiguo primero" },
+];
+
+const TIME_FILTER_OPTIONS = [
+  { value: "all", label: "Todos" },
+  { value: "past", label: "Contadores pasados" },
+  { value: "future", label: "Contadores futuros" },
+];
+
+function initSortDropdown() {
+  const container = document.getElementById("sort-dropdown-container");
+  if (!container || typeof createDropdown !== "function") return;
+
+  const dropdown = createDropdown({
+    options: SORT_OPTIONS,
+    value: getSortOrder(),
+    placeholder: "Ordenar...",
+    mobileTitle: "Ordenar",
+    className: "sort-dropdown",
+    onSelect: (value) => {
+      saveSortOrder(value);
+      renderCounters();
+    },
+  });
+  container.appendChild(dropdown);
+}
+
+function initTimeFilterDropdown() {
+  const container = document.getElementById("time-filter-dropdown-container");
+  if (!container || typeof createDropdown !== "function") return;
+
+  const dropdown = createDropdown({
+    options: TIME_FILTER_OPTIONS,
+    value: getTimeFilter(),
+    placeholder: "Mostrar...",
+    mobileTitle: "Mostrar",
+    className: "time-filter-dropdown",
+    onSelect: (value) => {
+      saveTimeFilter(value);
+      renderCounters();
+    },
+  });
+  container.appendChild(dropdown);
+}
+
 document.getElementById("close-counter-modal").onclick = closeCounterModal;
 document.getElementById("cancel-counter-modal").onclick = closeCounterModal;
 
@@ -752,6 +819,8 @@ function renderAuthStatusIndicator() {
 
 window.addEventListener("DOMContentLoaded", () => {
   initFrequencyDropdown();
+  initSortDropdown();
+  initTimeFilterDropdown();
   if (typeof lucide !== "undefined") lucide.createIcons();
   const authChangedHandler = () => {
     authStateResolved = true;
@@ -781,7 +850,7 @@ window.addEventListener("DOMContentLoaded", () => {
         text: "Cancelar",
         color: "secondary",
         id: "popover-cancel",
-        onClick: closeDeletePopover,
+        onClick: closePopover,
       })
     );
     popoverActions.appendChild(

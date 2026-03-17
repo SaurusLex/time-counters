@@ -9,19 +9,23 @@ import {
 
 let _getConfig = () => ({});
 let _getFilterTags = () => [];
+let _getSortOrder = () => "recent";
+let _getTimeFilter = () => "all";
 let _openCounterModal = () => {};
 let _renderFilterTags = () => {};
 let _getDomListElement = () => null;
 let _getCounterTimeElement = () => null;
 let _renderCounters = () => {};
 let _showDeleteConfirm = (opts) => {
-  import("../popover.js").then(({ showPopover }) => showPopover(opts));
+  import("../components/popover.js").then(({ showPopover }) => showPopover(opts));
 };
 let _onAfterDelete = () => {};
 
 export function initCounterManager(dependencies) {
   _getConfig = dependencies.getConfig;
   _getFilterTags = dependencies.getFilterTags;
+  _getSortOrder = dependencies.getSortOrder || _getSortOrder;
+  _getTimeFilter = dependencies.getTimeFilter || _getTimeFilter;
   _openCounterModal = dependencies.openCounterModal;
   _renderFilterTags = dependencies.renderFilterTags;
   _getDomListElement = dependencies.getDomListElement;
@@ -197,6 +201,22 @@ export function renderCounters() {
         Array.isArray(c.tags) && filterTags.every((tag) => c.tags.includes(tag))
     );
   }
+
+  const timeFilter = _getTimeFilter();
+  if (timeFilter !== "all") {
+    filtered = filtered.filter((c) => {
+      const eventDate = new Date(c.date);
+      if (isNaN(eventDate.getTime())) return false;
+      return timeFilter === "past" ? eventDate < now : eventDate >= now;
+    });
+  }
+
+  const sortOrder = _getSortOrder();
+  filtered = [...filtered].sort((a, b) => {
+    const idA = parseInt(a.id, 10) || 0;
+    const idB = parseInt(b.id, 10) || 0;
+    return sortOrder === "recent" ? idB - idA : idA - idB;
+  });
 
   filtered.forEach((counter, idxInFilteredArray) => {
     // Find the original index of the counter in the unfiltered 'counters' array

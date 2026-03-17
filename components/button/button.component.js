@@ -1,5 +1,6 @@
 // Componente para crear botones reutilizables con colores, tamaños y formas
 // Uso: createButton({ text, onClick, color, size, shape, className, type, ...attrs })
+// Estilos: components/button/button.css (cargado en index.html)
 
 const VALID_SIZES = ["xs", "sm", "md", "lg"];
 const VALID_SHAPES = ["default", "circle"];

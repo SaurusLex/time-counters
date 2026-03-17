@@ -1,0 +1,263 @@
+/* Button component styles */
+@import "../../design-tokens.css";
+
+/* Base: todos los botones (incl. los creados por createButton) */
+button {
+  min-width: 140px;
+  height: var(--size-btn-md);
+  padding: var(--space-2) var(--space-4);
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+button:hover {
+  background: #0056b3;
+}
+
+/* Botones del componente createButton */
+/* Tamaños */
+.btn--xs {
+  height: var(--size-btn-xs);
+  padding: var(--space-1) var(--space-2);
+}
+.btn--sm {
+  height: var(--size-btn-sm);
+  padding: var(--space-1) var(--space-3);
+}
+.btn--md {
+  height: var(--size-btn-md);
+  padding: var(--space-2) var(--space-4);
+}
+.btn--lg {
+  height: var(--size-btn-lg);
+  padding: var(--space-3) var(--space-5);
+}
+.btn--circle {
+  aspect-ratio: 1;
+  min-width: unset;
+  padding: 0;
+  border-radius: var(--radius-full);
+}
+
+/* Icono y texto */
+.btn-ico {
+  font-size: 1.15em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+}
+.btn-ico svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+  flex-shrink: 0;
+}
+.btn-text {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+button.btn-primary svg.lucide,
+button.btn-secondary svg.lucide,
+button.btn-add svg.lucide,
+button.btn-backup svg.lucide,
+button.btn-restore svg.lucide {
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Variante: solo icono (ej. clear-time-btn) */
+.clear-time-btn .btn-ico {
+  margin-right: 0;
+}
+.clear-time-btn .btn-ico svg,
+.clear-time-btn svg.lucide {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  margin-right: 0 !important;
+}
+.clear-time-btn .btn-text {
+  display: none;
+}
+
+/* Colores */
+.btn-primary {
+  background: #007bff;
+  color: #fff;
+  border: 1px solid #007bff;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background: #0056b3;
+  border-color: #0056b3;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #eaf4ff;
+  color: #007bff;
+  border: 1px solid #b6d6f6;
+}
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: #b6d6f6;
+  color: #0056b3;
+  border-color: #007bff;
+}
+
+.btn-danger {
+  background: #fff0f0;
+  color: #d9534f;
+  border: 1px solid #f5c6cb;
+}
+.btn-danger:hover,
+.btn-danger:focus {
+  background: #d9534f;
+  color: #fff;
+  border-color: #a71d2a;
+}
+
+.btn-success {
+  background: #eaffea;
+  color: #28a745;
+  border: 1px solid #b6f6b6;
+}
+.btn-success:hover,
+.btn-success:focus {
+  background: #28a745;
+  color: #fff;
+  border-color: #1e7e34;
+}
+
+.btn-warning {
+  background: #fffbe6;
+  color: #b8860b;
+  border: 1px solid #ffe58f;
+}
+.btn-warning:hover,
+.btn-warning:focus {
+  background: #ffe58f;
+  color: #7c5c01;
+  border-color: #b8860b;
+}
+
+.btn-info {
+  background: #eaf4ff;
+  color: #1a73e8;
+  border: 1px solid #b6d6f6;
+}
+.btn-info:hover,
+.btn-info:focus {
+  background: #b6d6f6;
+  color: #1251a3;
+  border-color: #1a73e8;
+}
+
+.btn-default {
+  background: #f4f4f4;
+  color: #333;
+  border: 1px solid #ccc;
+}
+.btn-default:hover,
+.btn-default:focus {
+  background: #e0e0e0;
+  color: #222;
+  border-color: #bbb;
+}
+
+.btn-add {
+  background: #007bff;
+  color: #fff;
+  border: 1px solid #007bff;
+  font-weight: bold;
+}
+.btn-add:hover {
+  background: #0056b3;
+  color: #fff;
+}
+
+.btn-auth {
+  background: #eaf4ff;
+  color: #007bff;
+  border: 1px solid #b6d6f6;
+}
+.btn-auth:hover {
+  background: #d0e7ff;
+  color: #0056b3;
+}
+
+.btn-backup {
+  background: #eaffea;
+  color: #28a745;
+  border: 1px solid #b6f6b6;
+}
+.btn-backup:hover {
+  background: #d4f8d4;
+  color: #1e7e34;
+}
+
+.btn-restore {
+  background: #fffbe6;
+  color: #b8860b;
+  border: 1px solid #ffe58f;
+}
+.btn-restore:hover {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.btn-delete {
+  background: #fff0f0;
+  color: #d9534f;
+  border: 1px solid #f5c6cb;
+}
+.btn-delete:hover {
+  background: #f8d7da;
+  color: #a71d2a;
+}
+
+.btn-view {
+  background: #eaf4ff;
+  color: #007bff;
+  border: 1px solid #b6d6f6;
+}
+.btn-view:hover {
+  background: #d0e7ff;
+  color: #0056b3;
+}
+
+/* Estilos comunes para todos los botones del componente */
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-success,
+.btn-warning,
+.btn-info,
+.btn-default {
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 0;
+  min-height: 0;
+  line-height: 1.2;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.18s, color 0.18s, border 0.18s;
+}

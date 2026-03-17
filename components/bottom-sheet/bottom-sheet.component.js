@@ -1,5 +1,6 @@
 // bottom-sheet.component.js
 // Componente BottomSheet para móvil: sale desde abajo, grabber, deja ver contenido detrás
+// Estilos: components/bottom-sheet/bottom-sheet.css (cargado en index.html)
 
 class BottomSheet {
   constructor({ header = null, body = null, footer = null, closable = true, onClose = null } = {}) {

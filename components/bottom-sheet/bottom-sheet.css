@@ -1,0 +1,76 @@
+/* Bottom Sheet component styles */
+@import "../../design-tokens.css";
+
+@keyframes bottomSheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bottom-sheet-grabber {
+  flex-shrink: 0;
+  padding: var(--space-3) 0 var(--space-2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+.bottom-sheet-grabber:active {
+  cursor: grabbing;
+}
+
+.bottom-sheet-grabber::before {
+  content: "";
+  width: 36px;
+  height: 4px;
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.bottom-sheet .modal-header {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-5) var(--space-3);
+  border-radius: 0;
+}
+.bottom-sheet .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  padding: var(--space-4) var(--space-5);
+}
+.bottom-sheet .modal-footer {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-5);
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  border-radius: 0;
+}
+
+/* Opciones (usado por bottom-sheet-options) */
+.bottom-sheet-options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bottom-sheet-option {
+  padding: var(--space-4) var(--space-5);
+  font-size: 1em;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.15s;
+}
+.bottom-sheet-option:last-child {
+  border-bottom: none;
+}
+.bottom-sheet-option:hover {
+  background: #f8f9fa;
+}
+.bottom-sheet-option.selected {
+  background: #eaf4ff;
+  color: #007bff;
+}

@@ -1,0 +1,57 @@
+/* Avatar component styles */
+@import "../../design-tokens.css";
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.avatar--xs {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+.avatar--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+.avatar--md {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+.avatar--lg {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+/* Avatar como trigger en el indicador de auth */
+.auth-avatar-trigger {
+  position: relative;
+  cursor: pointer;
+}
+.auth-avatar-loading {
+  cursor: wait;
+  pointer-events: none;
+  opacity: 0.7;
+}
+.auth-avatar-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
