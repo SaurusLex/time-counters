@@ -76,6 +76,11 @@
   padding: var(--space-3) var(--space-5) var(--space-3);
   border-radius: 0;
 }
+/* El sheet ya muestra .bottom-sheet-close junto al grabber: sin × duplicada en el header (.modal-close del HTML o .modal-close-btn que inyecta BottomSheet con header string). */
+.bottom-sheet .modal-header .modal-close,
+.bottom-sheet .modal-header .modal-close-btn {
+  display: none;
+}
 .bottom-sheet .modal-body {
   flex: 1 1 auto;
   overflow-y: auto;
