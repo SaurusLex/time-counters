@@ -30,12 +30,30 @@ class BottomSheet {
       animation: bottomSheetSlideUp 0.3s ease-out;
     `;
 
-    // Grabber (arrastrar hacia abajo para cerrar)
+    // Grabber (arrastrar hacia abajo para cerrar) + cierre a la derecha
+    const topBar = document.createElement('div');
+    topBar.className = 'bottom-sheet-top-bar';
+
     const grabber = document.createElement('div');
     grabber.className = 'bottom-sheet-grabber';
     grabber.setAttribute('aria-hidden', 'true');
     this._setupGrabberDrag(grabber);
-    this.sheet.appendChild(grabber);
+    topBar.appendChild(grabber);
+
+    if (this.closable) {
+      const closeBarBtn = document.createElement('button');
+      closeBarBtn.type = 'button';
+      closeBarBtn.className = 'bottom-sheet-close';
+      closeBarBtn.textContent = '×';
+      closeBarBtn.setAttribute('aria-label', 'Cerrar');
+      closeBarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.close();
+      });
+      topBar.appendChild(closeBarBtn);
+    }
+
+    this.sheet.appendChild(topBar);
 
     // Header: sin wrapper cuando es Node (evita anidación)
     let headerEl = null;

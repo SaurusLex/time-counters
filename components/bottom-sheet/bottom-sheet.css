@@ -12,9 +12,18 @@
   }
 }
 
-.bottom-sheet-grabber {
+.bottom-sheet-top-bar {
   flex-shrink: 0;
-  padding: var(--space-3) 0 var(--space-2);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-4) var(--space-2) var(--space-2);
+  min-height: 40px;
+}
+.bottom-sheet-grabber {
+  position: absolute;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -31,6 +40,35 @@
   height: 4px;
   background: #ccc;
   border-radius: 2px;
+}
+
+.bottom-sheet-close {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  min-width: unset;
+  width: 40px;
+  height: 40px;
+  margin: calc(var(--space-2) * -1) 0 0 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #888;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transition: background 0.18s, color 0.18s;
+}
+.bottom-sheet-close:hover,
+.bottom-sheet-close:focus {
+  background: #f0f2f7;
+  color: #d9534f;
+  outline: none;
 }
 
 .bottom-sheet .modal-header {
@@ -73,4 +111,19 @@
 .bottom-sheet-option.selected {
   background: #eaf4ff;
   color: #007bff;
+}
+
+.bottom-sheet-filter-section-title {
+  font-size: 0.82em;
+  font-weight: 600;
+  color: #666;
+  margin: var(--space-4) 0 var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bottom-sheet-filter-section-title:first-child {
+  margin-top: 0;
+}
+.bottom-sheet-filters-body .bottom-sheet-options-list + .bottom-sheet-filter-section-title {
+  margin-top: var(--space-5);
 }

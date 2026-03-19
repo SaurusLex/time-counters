@@ -48,7 +48,8 @@ export function showOptionsBottomSheet({ options = [], value = null, title = "Se
   const sheet = new BottomSheet({
     header,
     body: list,
-    footer: null,
+    /* '' evita el footer por defecto de BottomSheet (botón "Cerrar"); se cierra con overlay, grabber o eligiendo opción */
+    footer: "",
     closable: true,
     onClose: () => {
       if (typeof onClose === "function") onClose();

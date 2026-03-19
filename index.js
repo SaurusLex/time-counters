@@ -34,9 +34,9 @@ import {
   addOrUpdateCounter,
 } from "./core/counterManager.js"; // Import addOrUpdateCounter
 import { showPopover, closePopover } from "./components/popover.js";
-import { showOptionsBottomSheet, isMobile } from "./components/bottom-sheet-options.js";
 import Modal from "./components/modal.component.js";
 import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
+import { openFiltersBottomSheet } from "./components/filters-mobile-sheet.js";
 import "./components/dropdown.component.js";
 
 
@@ -529,6 +529,35 @@ function initTimeFilterDropdown() {
   container.appendChild(dropdown);
 }
 
+function initFiltersMobileButton() {
+  const wrap = document.getElementById("filters-mobile-toolbar");
+  if (!wrap || typeof window.createButton !== "function") return;
+
+  wrap.innerHTML = "";
+  const btn = window.createButton({
+    text: "Filtros",
+    color: "secondary",
+    className: "filters-mobile-trigger",
+    onClick: () => {
+      openFiltersBottomSheet({
+        sortOptions: SORT_OPTIONS,
+        timeOptions: TIME_FILTER_OPTIONS,
+        getSort: getSortOrder,
+        getTime: getTimeFilter,
+        onSortChange: (value) => {
+          saveSortOrder(value);
+          renderCounters();
+        },
+        onTimeChange: (value) => {
+          saveTimeFilter(value);
+          renderCounters();
+        },
+      });
+    },
+  });
+  wrap.appendChild(btn);
+}
+
 document.getElementById("close-counter-modal").onclick = closeCounterModal;
 document.getElementById("cancel-counter-modal").onclick = closeCounterModal;
 
@@ -704,18 +733,18 @@ function renderAuthStatusIndicator() {
       ? (user?.displayName || user?.email || "Conectado")
       : "Iniciar sesión";
 
-  let trigger;
+  let triggerChildren;
   if (signedIn || loading) {
-    trigger = window.createAvatar({
+    triggerChildren = window.createAvatar({
       name: user?.displayName || user?.email || "",
       size: "md",
       className: "auth-avatar-trigger",
     });
-    trigger.setAttribute("aria-label", loading ? "Comprobando sesión…" : `Estado de sesión: ${text}`);
-    trigger.setAttribute("title", text);
-    if (loading) trigger.classList.add("auth-avatar-loading");
+    triggerChildren.setAttribute("aria-label", loading ? "Comprobando sesión…" : `Estado de sesión: ${text}`);
+    triggerChildren.setAttribute("title", text);
+    if (loading) triggerChildren.classList.add("auth-avatar-loading");
   } else {
-    trigger = window.createPill({
+    triggerChildren = window.createPill({
       text: "Iniciar sesión",
       icon: "cloud-off",
       variant: "signed-out",
@@ -725,107 +754,44 @@ function renderAuthStatusIndicator() {
     });
   }
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "auth-pill-dropdown";
-  wrapper.appendChild(trigger);
-
-  const panel = document.createElement("div");
-  panel.className = "auth-pill-dropdown-panel";
-  panel.hidden = true;
-
-  const options = signedIn
+  const menuOptions = signedIn
     ? [
-        { id: "config", label: "Configuración", icon: "settings", action: () => openConfigModal() },
-        { id: "logout", label: "Cerrar sesión", icon: "log-out", action: () => handleLogoutClick() },
+        { value: "config", label: "Configuración", icon: "settings" },
+        { value: "logout", label: "Cerrar sesión", icon: "log-out" },
       ]
     : [
-        { id: "config", label: "Configuración", icon: "settings", action: () => openConfigModal() },
-        { id: "login", label: "Iniciar sesión", icon: "log-in", action: () => handleLoginClick() },
+        { value: "config", label: "Configuración", icon: "settings" },
+        { value: "login", label: "Iniciar sesión", icon: "log-in" },
       ];
 
-  options.forEach((opt) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "auth-pill-dropdown-option";
-    btn.innerHTML = `<i data-lucide="${opt.icon}"></i><span>${opt.label}</span>`;
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      closePanel();
-      opt.action();
-    };
-    panel.appendChild(btn);
+  const dropdown = window.createDropdown({
+    options: menuOptions,
+    value: null,
+    placeholder: "",
+    persistSelection: false,
+    triggerChildren,
+    className: "auth-menu-dropdown",
+    disabled: loading,
+    mobileTitle: text,
+    panelAlign: "end",
+    panelMinWidth: "180px",
+    onSelect: (val) => {
+      if (val === "config") openConfigModal();
+      else if (val === "logout") handleLogoutClick();
+      else if (val === "login") handleLoginClick();
+    },
   });
 
-  function positionPanel() {
-    const rect = trigger.getBoundingClientRect();
-    panel.style.position = "fixed";
-    panel.style.top = `${rect.bottom + 8}px`;
-    panel.style.left = `${rect.right - 200}px`;
-    panel.style.minWidth = "180px";
-    requestAnimationFrame(() => {
-      const panelRect = panel.getBoundingClientRect();
-      let top = rect.bottom + 8;
-      let left = rect.right - panelRect.width;
-      if (top + panelRect.height > window.innerHeight - 8) top = rect.top - panelRect.height - 8;
-      if (left < 8) left = 8;
-      if (left + panelRect.width > window.innerWidth - 8) left = window.innerWidth - panelRect.width - 8;
-      panel.style.top = `${top}px`;
-      panel.style.left = `${left}px`;
-    });
-  }
-
-  function openPanel() {
-    panel.hidden = false;
-    wrapper.classList.add("open");
-    positionPanel();
-    document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("keydown", handleEscape);
-  }
-
-  function closePanel() {
-    panel.hidden = true;
-    wrapper.classList.remove("open");
-    document.removeEventListener("mousedown", handleOutside);
-    document.removeEventListener("keydown", handleEscape);
-  }
-
-  function handleOutside(e) {
-    if (!wrapper.contains(e.target)) closePanel();
-  }
-
-  function handleEscape(e) {
-    if (e.key === "Escape") closePanel();
-  }
-
-  trigger.onclick = (e) => {
-    e.stopPropagation();
-    if (loading) return;
-    if (isMobile()) {
-      showOptionsBottomSheet({
-        options: options.map((o) => ({ value: o.id, label: o.label })),
-        value: null,
-        title: text,
-        onSelect: (val, opt) => {
-          const selected = options.find((x) => x.id === val);
-          if (selected) selected.action();
-        },
-      });
-    } else {
-      if (panel.hidden) openPanel();
-      else closePanel();
-    }
-  };
-
-  wrapper.appendChild(panel);
   container.innerHTML = "";
-  container.appendChild(wrapper);
-  if (typeof lucide !== "undefined") lucide.createIcons({ root: wrapper });
+  container.appendChild(dropdown);
+  if (typeof lucide !== "undefined") lucide.createIcons({ root: dropdown });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   initFrequencyDropdown();
   initSortDropdown();
   initTimeFilterDropdown();
+  initFiltersMobileButton();
   if (typeof lucide !== "undefined") lucide.createIcons();
   const authChangedHandler = () => {
     authStateResolved = true;

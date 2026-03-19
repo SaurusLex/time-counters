@@ -1,7 +1,8 @@
 // dropdown.component.js
 // Componente dropdown reutilizable: lista de opciones, selección única
 // En móvil usa bottom sheet para las opciones
-// Uso: createDropdown({ options, value, placeholder, onSelect, className, disabled, mobileTitle })
+// Uso: createDropdown({ options, value, placeholder, onSelect, className, disabled, mobileTitle, triggerChildren, persistSelection, panelAlign, panelMinWidth })
+// options[] puede incluir icon?: string (nombre Lucide) para mostrar icono antes del label
 
 import { showOptionsBottomSheet, isMobile } from "./bottom-sheet-options.js";
 
@@ -16,6 +17,10 @@ function createDropdown({
   className = "",
   disabled = false,
   mobileTitle = "Seleccionar",
+  triggerChildren = null,
+  persistSelection = true,
+  panelAlign = "start",
+  panelMinWidth = null,
 } = {}) {
   const wrapper = document.createElement("div");
   wrapper.className = `dropdown-wrapper ${className}`.trim();
@@ -27,15 +32,20 @@ function createDropdown({
   trigger.setAttribute("aria-expanded", "false");
   if (disabled) trigger.disabled = true;
 
-  const triggerText = document.createElement("span");
-  triggerText.className = "dropdown-trigger-text";
-
-  const triggerIcon = document.createElement("span");
-  triggerIcon.className = "dropdown-trigger-icon";
-  triggerIcon.innerHTML = CHEVRON_SVG;
-
-  trigger.appendChild(triggerText);
-  trigger.appendChild(triggerIcon);
+  let triggerText = null;
+  let triggerIcon = null;
+  if (triggerChildren) {
+    trigger.classList.add("dropdown-trigger--custom");
+    trigger.appendChild(triggerChildren);
+  } else {
+    triggerText = document.createElement("span");
+    triggerText.className = "dropdown-trigger-text";
+    triggerIcon = document.createElement("span");
+    triggerIcon.className = "dropdown-trigger-icon";
+    triggerIcon.innerHTML = CHEVRON_SVG;
+    trigger.appendChild(triggerText);
+    trigger.appendChild(triggerIcon);
+  }
 
   const panel = document.createElement("div");
   panel.className = "dropdown-panel";
@@ -50,6 +60,7 @@ function createDropdown({
   }
 
   function updateTriggerText() {
+    if (!triggerText) return;
     const selected = getSelectedOption();
     triggerText.textContent = selected ? selected.label : placeholder;
   }
@@ -57,14 +68,17 @@ function createDropdown({
   function positionPanel() {
     const rect = trigger.getBoundingClientRect();
     panel.style.position = "fixed";
+    const minW = panelMinWidth != null ? panelMinWidth : `${rect.width}px`;
+    panel.style.minWidth = minW;
+    const guessW = 200;
+    const preLeft = panelAlign === "end" ? rect.right - guessW : rect.left;
     panel.style.top = `${rect.bottom + 8}px`;
-    panel.style.left = `${rect.left}px`;
-    panel.style.minWidth = `${rect.width}px`;
+    panel.style.left = `${preLeft}px`;
 
     requestAnimationFrame(() => {
       const panelRect = panel.getBoundingClientRect();
       let top = rect.bottom + 8;
-      let left = rect.left;
+      let left = panelAlign === "end" ? rect.right - panelRect.width : rect.left;
 
       if (top + panelRect.height > window.innerHeight - 8) {
         top = rect.top - panelRect.height - 8;
@@ -128,11 +142,13 @@ function createDropdown({
   }
 
   function selectOption(opt) {
-    value = opt.value;
-    updateTriggerText();
-    list.querySelectorAll(".dropdown-option").forEach((el) => {
-      el.classList.toggle("selected", el.dataset.value === String(opt.value));
-    });
+    if (persistSelection) {
+      value = opt.value;
+      updateTriggerText();
+      list.querySelectorAll(".dropdown-option").forEach((el) => {
+        el.classList.toggle("selected", el.dataset.value === String(opt.value));
+      });
+    }
     close();
     if (typeof onSelect === "function") onSelect(opt.value, opt);
   }
@@ -145,9 +161,19 @@ function createDropdown({
   options.forEach((opt) => {
     const li = document.createElement("li");
     li.className = "dropdown-option";
+    if (opt.icon) li.classList.add("dropdown-option--with-icon");
     li.dataset.value = String(opt.value);
     li.setAttribute("role", "option");
-    li.textContent = opt.label;
+    if (opt.icon) {
+      const iconEl = document.createElement("i");
+      iconEl.setAttribute("data-lucide", opt.icon);
+      li.appendChild(iconEl);
+      const labelSpan = document.createElement("span");
+      labelSpan.textContent = opt.label;
+      li.appendChild(labelSpan);
+    } else {
+      li.textContent = opt.label;
+    }
     if (opt.value === value) li.classList.add("selected");
     li.addEventListener("click", (e) => {
       e.stopPropagation();
