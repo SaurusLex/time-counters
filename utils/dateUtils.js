@@ -26,20 +26,24 @@ export function dateDiff(from, to) {
     months += 12;
     years--;
   }
-  return { years, months, days, hours, minutes, seconds };
+  const weeks = Math.floor(days / 7);
+  days = days % 7;
+  return { years, months, weeks, days, hours, minutes, seconds };
 }
 
 const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
+const MS_PER_WEEK = 7 * MS_PER_DAY;
 const MS_PER_MONTH = 30.44 * MS_PER_DAY;
 const MS_PER_YEAR = 365.25 * MS_PER_DAY;
 
-const UNIT_ORDER = ["years", "months", "days", "hours", "minutes", "seconds"];
+const UNIT_ORDER = ["years", "months", "weeks", "days", "hours", "minutes", "seconds"];
 const MS_PER_UNIT = {
   years: MS_PER_YEAR,
   months: MS_PER_MONTH,
+  weeks: MS_PER_WEEK,
   days: MS_PER_DAY,
   hours: MS_PER_HOUR,
   minutes: MS_PER_MINUTE,
@@ -48,6 +52,7 @@ const MS_PER_UNIT = {
 const UNIT_LABELS = {
   years: (n) => (n !== 1 ? "años" : "año"),
   months: (n) => (n !== 1 ? "meses" : "mes"),
+  weeks: (n) => (n !== 1 ? "semanas" : "semana"),
   days: (n) => (n !== 1 ? "días" : "día"),
   hours: (n) => (n !== 1 ? "horas" : "hora"),
   minutes: (n) => (n !== 1 ? "minutos" : "minuto"),
@@ -105,9 +110,9 @@ export function formatDateDisplay(date, formatKey = "dd/MM/yyyy", opts = {}) {
   return dateStr;
 }
 
-/** Devuelve true si el texto formateado empieza con "1 " (primera cantidad singular) */
+/** Devuelve true si el texto formateado es singular (ej. "1 mes", "menos de un mes") */
 export function isFirstValueSingular(formattedDiff) {
-  return /^1\s/.test(formattedDiff);
+  return /^1\s/.test(formattedDiff) || /^menos de (un|una) /.test(formattedDiff);
 }
 
 export function formatDiff(diff, config, dates = null) {
@@ -141,6 +146,8 @@ export function formatDiff(diff, config, dates = null) {
     parts.push(`${diff.years} año${diff.years !== 1 ? "s" : ""}`);
   if (config.months && diff.months)
     parts.push(`${diff.months} mes${diff.months !== 1 ? "es" : ""}`);
+  if (config.weeks && diff.weeks)
+    parts.push(`${diff.weeks} semana${diff.weeks !== 1 ? "s" : ""}`);
   if (config.days && diff.days)
     parts.push(`${diff.days} día${diff.days !== 1 ? "s" : ""}`);
   if (config.hours && diff.hours)
@@ -149,7 +156,23 @@ export function formatDiff(diff, config, dates = null) {
     parts.push(`${diff.minutes} minuto${diff.minutes !== 1 ? "s" : ""}`);
   if (config.seconds && diff.seconds)
     parts.push(`${diff.seconds} segundo${diff.seconds !== 1 ? "s" : ""}`);
-  if (parts.length === 0) return "0 segundos";
+  if (parts.length === 0) {
+    if (activeUnits.length > 0) {
+      const smallestUnit = activeUnits[activeUnits.length - 1];
+      const labels = {
+        years: "año",
+        months: "mes",
+        weeks: "semana",
+        days: "día",
+        hours: "hora",
+        minutes: "minuto",
+        seconds: "segundo",
+      };
+      const art = smallestUnit === "hours" || smallestUnit === "weeks" ? "una" : "un";
+      return `menos de ${art} ${labels[smallestUnit]}`;
+    }
+    return "0 segundos";
+  }
   if (parts.length === 1) return parts[0];
   if (parts.length === 2) return parts.join(" y ");
   return parts.slice(0, -1).join(", ") + " y " + parts[parts.length - 1];

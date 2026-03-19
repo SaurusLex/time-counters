@@ -43,6 +43,7 @@ function getConfig() {
   const defaultConfig = {
     years: true,
     months: true,
+    weeks: true,
     days: true,
     hours: true,
     minutes: true,
@@ -924,6 +925,7 @@ function openConfigModal() {
       <div id="config-form-modal" class="units-buttons-row">
         <button type="button" class="unit-btn" data-unit="years">Años</button>
         <button type="button" class="unit-btn" data-unit="months">Meses</button>
+        <button type="button" class="unit-btn" data-unit="weeks">Semanas</button>
         <button type="button" class="unit-btn" data-unit="days">Días</button>
         <button type="button" class="unit-btn" data-unit="hours">Horas</button>
         <button type="button" class="unit-btn" data-unit="minutes">Min</button>
@@ -978,6 +980,7 @@ function openConfigModal() {
     const fakeDiff = {
       years: 2,
       months: 5,
+      weeks: 2,
       days: 12,
       hours: 4,
       minutes: 30,
