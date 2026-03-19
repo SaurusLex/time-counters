@@ -3,6 +3,7 @@
 // Estructura:
 //   users/{userId}/counters/{counterId} - cada contador
 //   users/{userId}/userSettings/sync - { lastSync } metadata separada
+//   users/{userId}/userSettings/appConfig - unidades de tiempo, dateFormat, etc.
 
 import { db, auth } from "./firebase-config.js";
 import {
@@ -15,6 +16,42 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+const DEFAULT_APP_CONFIG = {
+  years: true,
+  months: true,
+  weeks: true,
+  days: true,
+  hours: true,
+  minutes: true,
+  seconds: true,
+  dateFormat: "dd/MM/yyyy",
+};
+
+function mergeAppConfig(partial) {
+  const s = typeof partial === "object" && partial !== null ? { ...partial } : {};
+  delete s.driveSync;
+  return { ...DEFAULT_APP_CONFIG, ...s };
+}
+
+function readLocalConfigNormalized() {
+  let saved = {};
+  try {
+    saved = JSON.parse(localStorage.getItem("config") || "{}");
+  } catch {
+    saved = {};
+  }
+  return mergeAppConfig(saved);
+}
+
+function mergeAppConfigFromRemote(data) {
+  if (!data || typeof data !== "object") return readLocalConfigNormalized();
+  const pick = {};
+  for (const key of Object.keys(DEFAULT_APP_CONFIG)) {
+    if (key in data) pick[key] = data[key];
+  }
+  return mergeAppConfig(pick);
+}
+
 function getCountersCollectionRef() {
   const user = auth.currentUser;
   if (!user) return null;
@@ -25,6 +62,33 @@ function getUserSettingsSyncRef() {
   const user = auth.currentUser;
   if (!user) return null;
   return doc(db, "users", user.uid, "userSettings", "sync");
+}
+
+function getUserSettingsAppConfigRef() {
+  const user = auth.currentUser;
+  if (!user) return null;
+  return doc(db, "users", user.uid, "userSettings", "appConfig");
+}
+
+async function persistAppSettingsToCloud() {
+  const appConfigRef = getUserSettingsAppConfigRef();
+  const syncRef = getUserSettingsSyncRef();
+  if (!appConfigRef || !syncRef) return;
+  await setDoc(appConfigRef, readLocalConfigNormalized());
+  await setDoc(syncRef, { lastSync: serverTimestamp() });
+}
+
+/** Sincroniza solo configuración (unidades, formato de fecha) + lastSync, sin reescribir contadores. */
+export async function syncAppConfigToFirestore() {
+  if (!auth.currentUser) return;
+  try {
+    await persistAppSettingsToCloud();
+    if (typeof window.renderFirebaseBackupInfo === "function") {
+      window.renderFirebaseBackupInfo();
+    }
+  } catch (err) {
+    console.error("Error al sincronizar la configuración:", err);
+  }
 }
 
 export async function backupToFirestore() {
@@ -60,7 +124,7 @@ export async function backupToFirestore() {
       }
     }
 
-    await setDoc(getUserSettingsSyncRef(), { lastSync: serverTimestamp() });
+    await persistAppSettingsToCloud();
 
     if (window.showToast) window.showToast("Backup guardado en la nube");
     if (typeof window.renderFirebaseBackupInfo === "function") {
@@ -98,8 +162,21 @@ export async function restoreFromFirestore(silent = false) {
       return { ...rest, id: d.id };
     });
     localStorage.setItem("counters", JSON.stringify(counters));
+
+    const appConfigRef = getUserSettingsAppConfigRef();
+    const configSnap = await getDoc(appConfigRef);
+    let restoredConfig = false;
+    if (configSnap.exists()) {
+      localStorage.setItem(
+        "config",
+        JSON.stringify(mergeAppConfigFromRemote(configSnap.data()))
+      );
+      restoredConfig = true;
+    }
+
     if (window.renderCounters) window.renderCounters();
-    if (snap.empty) {
+    const hasAnyBackup = !snap.empty || restoredConfig;
+    if (!hasAnyBackup) {
       if (!silent && window.showToast) window.showToast("No hay backup en la nube");
     } else {
       if (!silent && window.showToast) window.showToast("Datos restaurados desde la nube");

@@ -14,6 +14,7 @@ import {
   backupToFirestore,
   restoreFromFirestore,
   renderFirebaseBackupInfo,
+  syncAppConfigToFirestore,
 } from "./firebase-backup.js";
 import {
   dateDiff,
@@ -60,6 +61,9 @@ function getConfig() {
 
 function saveConfig(config) {
   localStorage.setItem("config", JSON.stringify(config));
+  if (isSignedIn()) {
+    syncAppConfigToFirestore().catch((e) => console.error(e));
+  }
 }
 
 function getFilterTags() {
