@@ -6,6 +6,10 @@
     <title>Contadores de Tiempo</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="components/button/button.css" />
+    <link rel="stylesheet" href="components/modal/modal.css" />
+    <link rel="stylesheet" href="components/popover/popover.css" />
+    <link rel="stylesheet" href="components/toast/toast.css" />
+    <link rel="stylesheet" href="components/dropdown/dropdown.css" />
     <link rel="stylesheet" href="components/avatar/avatar.css" />
     <link rel="stylesheet" href="components/bottom-sheet/bottom-sheet.css" />
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
@@ -15,7 +19,7 @@
       <h1>Contadores de Tiempo</h1>
       <!-- El formulario original se oculta, ahora se usa el modal -->
       <form id="counter-form" style="display: none"></form>
-      <div class="drive-btns">
+      <div class="header-action-row">
         <div class="btn-group add-group" id="add-button-container"></div>
         <div id="auth-status-indicator"></div>
       </div>
@@ -119,7 +123,6 @@
           </button>
         </div>
         <div class="modal-body">
-          <!-- Sección de Google Drive deshabilitada temporalmente -->
           <div
             id="units-section"
             class="units-section-modal units-section-box"

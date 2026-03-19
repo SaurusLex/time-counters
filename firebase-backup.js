@@ -28,9 +28,14 @@ const DEFAULT_APP_CONFIG = {
 };
 
 function mergeAppConfig(partial) {
-  const s = typeof partial === "object" && partial !== null ? { ...partial } : {};
-  delete s.driveSync;
-  return { ...DEFAULT_APP_CONFIG, ...s };
+  if (typeof partial !== "object" || partial === null) {
+    return { ...DEFAULT_APP_CONFIG };
+  }
+  const pick = {};
+  for (const key of Object.keys(DEFAULT_APP_CONFIG)) {
+    if (key in partial) pick[key] = partial[key];
+  }
+  return { ...DEFAULT_APP_CONFIG, ...pick };
 }
 
 function readLocalConfigNormalized() {
@@ -45,11 +50,7 @@ function readLocalConfigNormalized() {
 
 function mergeAppConfigFromRemote(data) {
   if (!data || typeof data !== "object") return readLocalConfigNormalized();
-  const pick = {};
-  for (const key of Object.keys(DEFAULT_APP_CONFIG)) {
-    if (key in data) pick[key] = data[key];
-  }
-  return mergeAppConfig(pick);
+  return mergeAppConfig(data);
 }
 
 function getCountersCollectionRef() {

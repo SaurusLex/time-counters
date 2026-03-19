@@ -1,7 +1,7 @@
 // Asegura que window.createTag está disponible
-import "./components/tag.component.js";
+import "./components/tag/tag.component.js";
 import "./components/button/button.component.js";
-import "./components/pill.component.js";
+import "./components/pill/pill.component.js";
 import "./components/avatar/avatar.component.js";
 import {
   initAuth,
@@ -33,12 +33,11 @@ import {
   deleteCounter as deleteCounterFromManager,
   addOrUpdateCounter,
 } from "./core/counterManager.js"; // Import addOrUpdateCounter
-import { showPopover, closePopover } from "./components/popover.js";
-import Modal from "./components/modal.component.js";
+import { showPopover, closePopover } from "./components/popover/popover.js";
+import Modal from "./components/modal/modal.component.js";
 import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
-import { openFiltersBottomSheet } from "./components/filters-mobile-sheet.js";
-import "./components/dropdown.component.js";
-
+import { openFiltersBottomSheet } from "./components/filters-mobile-sheet/filters-mobile-sheet.js";
+import "./components/dropdown/dropdown.component.js";
 
 function getConfig() {
   const defaultConfig = {
@@ -54,8 +53,6 @@ function getConfig() {
   const saved = JSON.parse(
     localStorage.getItem("config") || JSON.stringify(defaultConfig)
   );
-  // Ignorar cualquier clave antigua relacionada con Drive
-  delete saved.driveSync;
   return { ...defaultConfig, ...saved };
 }
 
@@ -192,8 +189,8 @@ if (addBtnContainer) {
   addBtnContainer.appendChild(addBtn);
 }
 if (typeof lucide !== "undefined") {
-  const driveBtns = document.querySelector(".drive-btns");
-  if (driveBtns) lucide.createIcons({ root: driveBtns });
+  const headerActionRow = document.querySelector(".header-action-row");
+  if (headerActionRow) lucide.createIcons({ root: headerActionRow });
 }
 
 // Botón para quitar la hora (usa createButton)

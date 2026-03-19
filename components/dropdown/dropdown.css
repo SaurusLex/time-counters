@@ -1,0 +1,110 @@
+@import "../../design-tokens.css";
+
+/* Dropdown component */
+.dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+.dropdown-trigger {
+  width: 100%;
+  height: var(--size-input);
+  padding: var(--space-2);
+  border: 1px solid #ccc;
+  border-radius: var(--radius-sm);
+  background-color: white;
+  color: #333;
+  font-size: 1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  text-align: left;
+  box-sizing: border-box;
+}
+.dropdown-trigger:hover,
+.dropdown-trigger:focus {
+  background-color: white;
+  color: #333;
+}
+.dropdown-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.dropdown-trigger-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropdown-trigger-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+.dropdown-wrapper.open .dropdown-trigger-icon {
+  transform: rotate(180deg);
+}
+.dropdown-panel {
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+}
+.dropdown-option {
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 1em;
+}
+.dropdown-option:hover {
+  background: #f8f9fa;
+}
+.dropdown-option.selected {
+  background: #eaf4ff;
+  color: #007bff;
+}
+.dropdown-option--with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+}
+.dropdown-option--with-icon svg {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+}
+.dropdown-trigger--custom {
+  width: auto;
+  min-width: unset; /* override global button { min-width: 140px } in button.css */
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  justify-content: center;
+}
+.dropdown-trigger--custom:hover,
+.dropdown-trigger--custom:focus {
+  background: transparent;
+  color: inherit;
+}
+.auth-menu-dropdown.dropdown-wrapper {
+  width: max-content;
+  max-width: 100%;
+  display: inline-block;
+}

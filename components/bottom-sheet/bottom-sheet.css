@@ -89,7 +89,7 @@
   border-radius: 0;
 }
 
-/* Opciones (usado por bottom-sheet-options) */
+/* Opciones (bottom-sheet/bottom-sheet-options.js, filters-mobile-sheet) */
 .bottom-sheet-options-list {
   list-style: none;
   margin: 0;

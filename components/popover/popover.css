@@ -1,0 +1,76 @@
+@import "../../design-tokens.css";
+
+/* Popover styles */
+.popover {
+  position: fixed;
+  z-index: 2000;
+  min-width: 220px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.popover-content {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  padding: 18px 22px 14px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #e3e3e3;
+  min-width: 200px;
+  max-width: 320px;
+  font-size: 1em;
+  animation: popoverIn 0.18s;
+}
+@keyframes popoverIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.popover-content span {
+  margin-bottom: 14px;
+  color: #222;
+  text-align: center;
+}
+.popover-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+#popover-cancel {
+  background: #eee;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 7px 18px;
+  transition: background 0.2s, color 0.2s;
+}
+#popover-cancel:hover {
+  background: #f8d7da;
+  color: #a00;
+  border-color: #f5c2c7;
+}
+#popover-confirm {
+  background: #d9534f;
+  color: #fff;
+  border: 1px solid #d43f3a;
+  border-radius: 4px;
+  padding: 7px 18px;
+  transition: background 0.2s, color 0.2s;
+}
+#popover-confirm:hover {
+  background: #a71d2a;
+  color: #fff;
+  border-color: #a71d2a;
+}

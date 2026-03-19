@@ -2,6 +2,7 @@
 // Uso: createPill({ text, icon, variant, size, onClick, ariaLabel, title })
 // variant: "signed-in" | "signed-out"
 // size: "xs" | "sm" | "md" | "lg" | "xl" (igual que botones + xl)
+// Estilos: style.css (.auth-status-pill), components/button/button.css
 
 const VALID_VARIANTS = ["signed-in", "signed-out"];
 const VALID_SIZES = ["xs", "sm", "md", "lg", "xl"];

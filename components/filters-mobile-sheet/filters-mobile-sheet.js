@@ -1,7 +1,8 @@
 // filters-mobile-sheet.js
 // Bottom sheet único en móvil: Ordenar + Mostrar como listas planas
+// Estilos: components/bottom-sheet/bottom-sheet.css
 
-import BottomSheet from "./bottom-sheet/bottom-sheet.component.js";
+import BottomSheet from "../bottom-sheet/bottom-sheet.component.js";
 
 /**
  * @param {Object} opts

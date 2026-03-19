@@ -1,5 +1,6 @@
 // popover.js
 // Módulo para el popover de confirmación de borrado
+// Estilos: components/popover/popover.css
 
 /**
  * Muestra un popover general reutilizable junto a un elemento ancla.

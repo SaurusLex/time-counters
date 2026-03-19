@@ -1,5 +1,6 @@
 // Componente para crear tags reutilizables
 // Uso: createTag({ text, size, removable, onRemove, selectable, selected, onSelect })
+// Estilos: style.css (sección tags)
 
 const VALID_SIZES = ["xs", "sm", "md", "lg"];
 

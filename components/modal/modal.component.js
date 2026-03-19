@@ -1,5 +1,6 @@
 // modal.component.js
 // Componente Modal reutilizable en JavaScript puro
+// Estilos: components/modal/modal.css
 
 class Modal {
   constructor({ header = null, body = null, footer = null, closable = true, onClose = null } = {}) {

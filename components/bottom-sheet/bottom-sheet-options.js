@@ -1,8 +1,9 @@
 // bottom-sheet-options.js
 // Muestra opciones en un BottomSheet para móvil (selector tipo picker)
 // Uso: showOptionsBottomSheet({ options, value, title, onSelect })
+// Estilos: components/bottom-sheet/bottom-sheet.css
 
-import BottomSheet from "./bottom-sheet/bottom-sheet.component.js";
+import BottomSheet from "./bottom-sheet.component.js";
 
 const MOBILE_BREAKPOINT = 600;
 

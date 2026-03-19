@@ -3,8 +3,9 @@
 // En móvil usa bottom sheet para las opciones
 // Uso: createDropdown({ options, value, placeholder, onSelect, className, disabled, mobileTitle, triggerChildren, persistSelection, panelAlign, panelMinWidth })
 // options[] puede incluir icon?: string (nombre Lucide) para mostrar icono antes del label
+// Estilos: components/dropdown/dropdown.css
 
-import { showOptionsBottomSheet, isMobile } from "./bottom-sheet-options.js";
+import { showOptionsBottomSheet, isMobile } from "../bottom-sheet/bottom-sheet-options.js";
 
 const CHEVRON_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';

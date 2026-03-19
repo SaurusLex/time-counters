@@ -17,7 +17,7 @@ let _getDomListElement = () => null;
 let _getCounterTimeElement = () => null;
 let _renderCounters = () => {};
 let _showDeleteConfirm = (opts) => {
-  import("../components/popover.js").then(({ showPopover }) => showPopover(opts));
+  import("../components/popover/popover.js").then(({ showPopover }) => showPopover(opts));
 };
 let _onAfterDelete = () => {};
 
