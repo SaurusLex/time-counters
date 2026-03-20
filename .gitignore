@@ -1,6 +1,9 @@
 # Dependencias
 node_modules/
 
+# Build (generado en local y en Vercel con npm run build)
+dist/
+
 # Editor
 .vscode/
 .cursor/
