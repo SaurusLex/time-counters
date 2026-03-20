@@ -52,6 +52,8 @@ export function deleteCounter(id, occurrenceDateString) {
   }
 
   const counter = counters[index];
+  /** @type {'counter' | 'occurrence'} */
+  let afterDeleteKind = "counter";
 
   if (occurrenceDateString && counter.frequency !== "none") {
     // This is a deletion of a specific occurrence of a recurring counter
@@ -72,7 +74,7 @@ export function deleteCounter(id, occurrenceDateString) {
         saveCounters(counters);
         _renderCounters();
         _renderFilterTags();
-        _onAfterDelete?.();
+        _onAfterDelete?.({ kind: "counter" });
         return true;
       }
     }
@@ -85,6 +87,7 @@ export function deleteCounter(id, occurrenceDateString) {
     if (!counter.deletedOccurrences.includes(occurrenceISOString)) {
       counter.deletedOccurrences.push(occurrenceISOString);
     }
+    afterDeleteKind = "occurrence";
     // Do not remove the counter from the array, just mark the occurrence as deleted.
     // The counter.date (start of series) should also remain unchanged.
     console.log(
@@ -99,7 +102,7 @@ export function deleteCounter(id, occurrenceDateString) {
   saveCounters(counters);
   _renderCounters();
   _renderFilterTags();
-  _onAfterDelete?.();
+  _onAfterDelete?.({ kind: afterDeleteKind });
   return true;
 }
 

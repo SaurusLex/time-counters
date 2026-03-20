@@ -92,10 +92,13 @@ export async function syncAppConfigToFirestore() {
   }
 }
 
-export async function backupToFirestore() {
+/** @param {{ showSuccessToast?: boolean }} [options] */
+export async function backupToFirestore(options = {}) {
+  const showSuccessToast = options.showSuccessToast === true;
   const user = auth.currentUser;
   if (!user) {
-    if (window.showToast) window.showToast("Debes iniciar sesión primero.");
+    if (window.showToast)
+      window.showToast("Debes iniciar sesión primero.", { variant: "warning" });
     return;
   }
   const btn = document.getElementById("firebase-backup-btn");
@@ -127,13 +130,16 @@ export async function backupToFirestore() {
 
     await persistAppSettingsToCloud();
 
-    if (window.showToast) window.showToast("Backup guardado en la nube");
+    if (showSuccessToast && window.showToast) {
+      window.showToast("Backup guardado en la nube", { variant: "success" });
+    }
     if (typeof window.renderFirebaseBackupInfo === "function") {
       window.renderFirebaseBackupInfo();
     }
   } catch (err) {
     console.error("Error al guardar backup:", err);
-    if (window.showToast) window.showToast("Error al guardar en la nube");
+    if (window.showToast)
+      window.showToast("Error al guardar en la nube", { variant: "error" });
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -145,7 +151,8 @@ export async function backupToFirestore() {
 export async function restoreFromFirestore(silent = false) {
   const user = auth.currentUser;
   if (!user) {
-    if (!silent && window.showToast) window.showToast("Debes iniciar sesión primero.");
+    if (!silent && window.showToast)
+      window.showToast("Debes iniciar sesión primero.", { variant: "warning" });
     return;
   }
   const btn = document.getElementById("firebase-restore-btn");
@@ -178,13 +185,16 @@ export async function restoreFromFirestore(silent = false) {
     if (window.renderCounters) window.renderCounters();
     const hasAnyBackup = !snap.empty || restoredConfig;
     if (!hasAnyBackup) {
-      if (!silent && window.showToast) window.showToast("No hay backup en la nube");
+      if (!silent && window.showToast)
+        window.showToast("No hay backup en la nube", { variant: "info" });
     } else {
-      if (!silent && window.showToast) window.showToast("Datos restaurados desde la nube");
+      if (!silent && window.showToast)
+        window.showToast("Datos restaurados desde la nube", { variant: "success" });
     }
   } catch (err) {
     console.error("Error al restaurar:", err);
-    if (!silent && window.showToast) window.showToast("Error al restaurar desde la nube");
+    if (!silent && window.showToast)
+      window.showToast("Error al restaurar desde la nube", { variant: "error" });
   } finally {
     if (btn) {
       btn.disabled = false;

@@ -27,10 +27,10 @@ export async function handleLoginClick() {
   } catch (err) {
     console.error("Error al iniciar sesión:", err);
     if (window.showToast) {
+      const cancelled = err.code === "auth/popup-closed-by-user";
       window.showToast(
-        err.code === "auth/popup-closed-by-user"
-          ? "Inicio de sesión cancelado"
-          : "Error al autenticar con Google"
+        cancelled ? "Inicio de sesión cancelado" : "Error al autenticar con Google",
+        { variant: cancelled ? "info" : "error" }
       );
     }
   }

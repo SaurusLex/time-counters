@@ -1,6 +1,7 @@
 // Asegura que window.createTag está disponible
 import "./components/tag/tag.component.js";
 import "./components/button/button.component.js";
+import { showToast } from "./components/toast/toast.js";
 import "./components/pill/pill.component.js";
 import "./components/avatar/avatar.component.js";
 import {
@@ -158,7 +159,13 @@ initCounterManager({
   getCounterTimeElement,
   deleteCounter: deleteCounterFromManager,
   showDeleteConfirm,
-  onAfterDelete: async () => {
+  onAfterDelete: async (ctx = {}) => {
+    const deletedOccurrence = ctx.kind === "occurrence";
+    showToast(deletedOccurrence ? "Evento eliminado" : "Contador eliminado", {
+      variant: "default",
+      placement: "top-right",
+      size: "lg",
+    });
     if (isSignedIn()) {
       try {
         await backupToFirestore();
@@ -168,14 +175,6 @@ initCounterManager({
 });
 
 // --- ELIMINADO: Popover de confirmación de borrado legacy ---
-// Toast HTML
-const toastHtml = `
-<div id="undo-toast" class="toast" style="display:none;">
-  <div class="toast-content-row" id="toast-content-row"></div>
-  <div class="toast-progress"><div id="toast-bar"></div></div>
-</div>`;
-document.body.insertAdjacentHTML("beforeend", toastHtml);
-
 // Crear botones de header con el componente createButton
 const addBtnContainer = document.getElementById("add-button-container");
 if (addBtnContainer) {
@@ -224,7 +223,6 @@ let modalTags = [];
 let editingIdx = null;
 let deleteIdx = null;
 let lastDeleted = null;
-let toastTimeout = null;
 let currentFilterTags = []; // Renamed for clarity and to avoid conflict if filterTags was meant to be local elsewhere.
 let counterModalRoot = null; // Contenedor actual: modal o BottomSheet
 let counterSheetView = null; // BottomSheet cuando se usa en móvil
@@ -609,7 +607,7 @@ document
     // saveCounters() is also called by addOrUpdateCounter in the manager
 
     closeCounterModal();
-    // Backup automático en Firebase si está autenticado
+    // Backup automático en Firebase si está autenticado (sin toast de éxito)
     if (isSignedIn()) {
       try {
         await backupToFirestore();
@@ -623,40 +621,6 @@ document.getElementById("counters-list").onclick = function (e) {
     openCounterModal("edit", btn.getAttribute("data-idx"));
   }
 };
-
-function showToast(msg, onUndo) {
-  const toast = document.getElementById("undo-toast");
-  document.getElementById("toast-msg").textContent = msg;
-  toast.style.display = "flex";
-  toast.classList.add("show");
-  document.getElementById("undo-btn").onclick = function () {
-    if (onUndo) onUndo();
-    hideToast();
-  };
-  // Barra de progreso
-  const bar = document.getElementById("toast-bar");
-  let duration = 10000;
-  let start = Date.now();
-  bar.style.width = "100%";
-  function animateBar() {
-    let elapsed = Date.now() - start;
-    let percent = Math.max(0, 1 - elapsed / duration);
-    bar.style.width = percent * 100 + "%";
-    if (percent > 0 && toast.style.display !== "none") {
-      requestAnimationFrame(animateBar);
-    }
-  }
-  animateBar();
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(hideToast, duration);
-}
-
-function hideToast() {
-  const toast = document.getElementById("undo-toast");
-  toast.style.display = "none";
-  toast.classList.remove("show");
-  clearTimeout(toastTimeout);
-}
 
 // --- ELIMINADO: closeDeletePopover y referencias a delete-popover ---
 
@@ -857,21 +821,6 @@ window.addEventListener("DOMContentLoaded", () => {
       })
     );
   }
-  // Reemplazar botón de toast
-  const toastContentRow = document.getElementById("toast-content-row");
-  if (toastContentRow) {
-    toastContentRow.innerHTML = "";
-    const msgSpan = document.createElement("span");
-    msgSpan.id = "toast-msg";
-    toastContentRow.appendChild(msgSpan);
-    toastContentRow.appendChild(
-      window.createButton({
-        text: "Deshacer",
-        color: "primary",
-        id: "undo-btn",
-      })
-    );
-  }
   renderCounters(); // <-- Asegura que la lista se muestre al cargar la página
   // Actualizar tiempos en las cards cada segundo
   setInterval(updateCountersTime, 1000);
@@ -1030,7 +979,7 @@ function openConfigModal() {
       backupBtn.type = "button";
       backupBtn.style.width = btnFullWidth;
       backupBtn.innerHTML = '<i data-lucide="cloud-upload"></i> Guardar en la nube';
-      backupBtn.onclick = backupToFirestore;
+      backupBtn.onclick = () => backupToFirestore({ showSuccessToast: true });
       const restoreBtn = document.createElement("button");
       restoreBtn.id = "firebase-restore-btn";
       restoreBtn.className = "btn-restore";
@@ -1115,7 +1064,7 @@ function openConfigModal() {
       const file = e.target.files[0];
       if (!file) {
         window.showToast &&
-          window.showToast("No se seleccionó ningún archivo.");
+          window.showToast("No se seleccionó ningún archivo.", { variant: "warning" });
         return;
       }
       const reader = new FileReader();
@@ -1127,7 +1076,9 @@ function openConfigModal() {
           const json = window.XLSX.utils.sheet_to_json(sheet);
           if (!Array.isArray(json) || !json.length) {
             window.showToast &&
-              window.showToast("El archivo Excel está vacío o no tiene datos.");
+              window.showToast("El archivo Excel está vacío o no tiene datos.", {
+                variant: "warning",
+              });
             return;
           }
           const valid = json.every(
@@ -1136,7 +1087,8 @@ function openConfigModal() {
           if (!valid) {
             window.showToast &&
               window.showToast(
-                "El archivo debe tener las columnas: nombre, fecha y tags"
+                "El archivo debe tener las columnas: nombre, fecha y tags",
+                { variant: "error" }
               );
             return;
           }
@@ -1153,19 +1105,23 @@ function openConfigModal() {
           if (!counters.length) {
             window.showToast &&
               window.showToast(
-                "No se encontraron contadores válidos en el archivo."
+                "No se encontraron contadores válidos en el archivo.",
+                { variant: "warning" }
               );
             return;
           }
           localStorage.setItem("counters", JSON.stringify(counters));
           renderCounters();
           window.showToast &&
-            window.showToast("Contadores importados correctamente");
+            window.showToast("Contadores importados correctamente", {
+              variant: "success",
+            });
           view.close();
         } catch (err) {
           window.showToast &&
             window.showToast(
-              "Error al importar el archivo. ¿Es un Excel válido?"
+              "Error al importar el archivo. ¿Es un Excel válido?",
+              { variant: "error" }
             );
         }
       };
