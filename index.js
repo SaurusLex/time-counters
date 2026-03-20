@@ -759,14 +759,12 @@ window.addEventListener("DOMContentLoaded", () => {
     renderAuthStatusIndicator();
   };
   document.addEventListener("firebase-auth-changed", authChangedHandler);
-  let initialAuthResolved = false;
   initAuth(async (user) => {
-    if (user && !initialAuthResolved) {
+    if (user) {
       try {
         await restoreFromFirestore(true);
       } catch (e) {}
     }
-    initialAuthResolved = true;
   });
   renderAuthStatusIndicator();
   // Configuración de formulario y UI
