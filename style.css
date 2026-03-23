@@ -2,7 +2,7 @@
 
 body {
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  background: var(--color-bg-page);
   margin: 0;
   padding: 0;
 }
@@ -111,7 +111,7 @@ ul#counters-list {
   padding: 0;
 }
 ul#counters-list li {
-  background: #ffffff;
+  background: var(--color-surface-card);
   margin-bottom: var(--space-4);
   padding: var(--space-5) var(--space-5);
   border-radius: var(--radius-lg);
@@ -130,7 +130,7 @@ ul#counters-list li {
   z-index: 0;
 }
 ul#counters-list li:hover {
-  background: #f7f7f7;
+  background: var(--color-surface-card-hover);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06),
     0 4px 8px rgba(0, 0, 0, 0.06),
@@ -409,6 +409,17 @@ select.form-control {
   flex-wrap: wrap;
 }
 
+.counters-search-wrap {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.counters-search-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .filters-mobile-only {
   display: none;
   width: 100%;
@@ -416,13 +427,22 @@ select.form-control {
 
 @media (max-width: 600px) {
   .counters-toolbar {
-    gap: 0;
+    gap: 8px;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  .counters-search-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
   }
   .counters-toolbar .filters-desktop-only {
     display: none !important;
   }
   .counters-toolbar .filters-mobile-only {
     display: flex;
+    flex: 0 0 auto;
+    width: auto;
     gap: 0;
     margin: 0;
     padding: 0;
@@ -431,10 +451,11 @@ select.form-control {
     margin-left: 0;
   }
   .filters-mobile-trigger {
-    width: 100%;
+    width: auto;
+    min-width: min-content;
     max-width: 100%;
-    min-width: 0;
     margin: 0;
+    white-space: nowrap;
   }
 }
 

@@ -6,6 +6,7 @@
     <title>Contadores de Tiempo</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="components/button/button.css" />
+    <link rel="stylesheet" href="components/empty-state/empty-state.css" />
     <link rel="stylesheet" href="components/modal/modal.css" />
     <link rel="stylesheet" href="components/popover/popover.css" />
     <link rel="stylesheet" href="components/toast/toast.css" />
@@ -30,6 +31,16 @@
         <div id="filter-tags-list"></div>
       </div>
       <div class="counters-toolbar">
+        <div class="counters-search-wrap">
+          <input
+            type="search"
+            id="counters-search-input"
+            class="form-control counters-search-input"
+            placeholder="Buscar…"
+            autocomplete="off"
+            aria-label="Buscar contadores"
+          />
+        </div>
         <div id="filters-mobile-toolbar" class="filters-mobile-only"></div>
         <div id="sort-dropdown-container" class="filters-desktop-only"></div>
         <div id="time-filter-dropdown-container" class="filters-desktop-only"></div>
@@ -110,77 +121,6 @@
           <button type="submit" id="save-counter-btn" form="counter-form-modal">
             Guardar
           </button>
-        </div>
-      </div>
-    </div>
-    <!-- Modal de configuración -->
-    <div id="config-modal" class="modal" style="display: none">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span class="modal-title">Configuración</span>
-          <button class="modal-close" id="close-config-modal" type="button">
-            &times;
-          </button>
-        </div>
-        <div class="modal-body">
-          <div
-            id="units-section"
-            class="units-section-modal units-section-box"
-            style="margin-top: 22px"
-          >
-            <div class="units-section-title">
-              <i data-lucide="clock" style="margin-right: 7px"></i
-              >Unidades de tiempo
-            </div>
-            <div id="config-form-modal" class="units-buttons-row">
-              <button type="button" class="unit-btn" data-unit="years">Años</button>
-              <button type="button" class="unit-btn" data-unit="months">Meses</button>
-              <button type="button" class="unit-btn" data-unit="weeks">Semanas</button>
-              <button type="button" class="unit-btn" data-unit="days">Días</button>
-              <button type="button" class="unit-btn" data-unit="hours">Horas</button>
-              <button type="button" class="unit-btn" data-unit="minutes">Min</button>
-              <button type="button" class="unit-btn" data-unit="seconds">Seg</button>
-            </div>
-          </div>
-          <div
-            id="import-export-section"
-            class="units-section-modal units-section-box"
-            style="margin-top: 22px"
-          >
-            <div class="units-section-title">
-              <i
-                data-lucide="file-spreadsheet"
-                style="margin-right: 7px; color: #1d6f42"
-              ></i
-              >Importar / Exportar
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap">
-              <button id="export-excel-btn" class="btn-backup" type="button">
-                <i data-lucide="download"></i> Exportar a Excel
-              </button>
-              <label
-                for="import-excel-input"
-                class="btn-restore"
-                style="
-                  cursor: pointer;
-                  display: inline-flex;
-                  align-items: center;
-                  gap: 6px;
-                "
-              >
-                <i data-lucide="upload"></i> Importar desde Excel
-                <input
-                  id="import-excel-input"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  style="display: none"
-                />
-              </label>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" id="close-config-modal-footer">Cerrar</button>
         </div>
       </div>
     </div>

@@ -38,6 +38,11 @@
   --radius-xl: 12px;
   --radius-full: 50%;
 
+  /* Surfaces: fondo de página y tarjetas elevadas */
+  --color-bg-page: #f4f4f4;
+  --color-surface-card: #ffffff;
+  --color-surface-card-hover: #f7f7f7;
+
   /* Breakpoints (documentación; usar valores literales en media queries) */
   /* --bp-sm: 500px; --bp-md: 600px; --bp-lg: 700px; */
 }

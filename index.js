@@ -82,6 +82,11 @@ function getTimeFilter() {
   return saved === "past" || saved === "future" ? saved : "all";
 }
 
+function getSearchQuery() {
+  const el = document.getElementById("counters-search-input");
+  return el ? el.value : "";
+}
+
 function saveTimeFilter(value) {
   localStorage.setItem("countersTimeFilter", value);
 }
@@ -153,6 +158,7 @@ initCounterManager({
   getFilterTags,
   getSortOrder,
   getTimeFilter,
+  getSearchQuery,
   openCounterModal,
   renderFilterTags,
   getDomListElement,
@@ -645,6 +651,10 @@ function deleteCounter(idx, deleteAllOccurrences = false) {
 }
 
 function renderFilterTags() {
+  const toolbar = document.querySelector(".counters-toolbar");
+  if (toolbar) {
+    toolbar.style.display = getCounters().length === 0 ? "none" : "";
+  }
   const filterTagsList = document.getElementById("filter-tags-list");
   const filterSection = document.querySelector(".filter-tags-section");
   if (!filterTagsList || !filterSection) return;
@@ -753,6 +763,10 @@ window.addEventListener("DOMContentLoaded", () => {
   initSortDropdown();
   initTimeFilterDropdown();
   initFiltersMobileButton();
+  const searchInput = document.getElementById("counters-search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => renderCounters());
+  }
   if (typeof lucide !== "undefined") lucide.createIcons();
   const authChangedHandler = () => {
     authStateResolved = true;
@@ -824,6 +838,122 @@ window.addEventListener("DOMContentLoaded", () => {
   setInterval(updateCountersTime, 1000);
 });
 
+// --- Importar / exportar Excel (createButton + input file oculto) ---
+function wireExcelImportExport(root, { closeView } = {}) {
+  const row = root.querySelector("#excel-actions-row");
+  const importInput = root.querySelector("#import-excel-input");
+  if (!row || !importInput || typeof window.createButton !== "function") return;
+
+  row.innerHTML = "";
+
+  const exportBtn = window.createButton({
+    text: "Exportar a Excel",
+    icon: "download",
+    color: "primary",
+    onClick: () => {
+      const XLSXlib = window.XLSX;
+      if (!XLSXlib) {
+        alert("No se ha cargado la librería XLSX.");
+        return;
+      }
+      const counters = getCounters();
+      const data = counters.map((c) => ({
+        nombre: c.name,
+        fecha: c.date,
+        tags: Array.isArray(c.tags) ? c.tags : [],
+      }));
+      const dataExcel = data.map((row) => ({
+        ...row,
+        tags: Array.isArray(row.tags) ? row.tags.join(", ") : "",
+      }));
+      const ws = XLSXlib.utils.json_to_sheet(dataExcel);
+      const wb = XLSXlib.utils.book_new();
+      XLSXlib.utils.book_append_sheet(wb, ws, "Contadores");
+      XLSXlib.writeFile(wb, "contadores.xlsx");
+    },
+  });
+
+  const importBtn = window.createButton({
+    text: "Importar desde Excel",
+    icon: "upload",
+    color: "primary",
+    onClick: () => importInput.click(),
+  });
+
+  row.appendChild(exportBtn);
+  row.appendChild(importBtn);
+  if (typeof lucide !== "undefined") lucide.createIcons({ root: row });
+
+  importInput.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) {
+      window.showToast &&
+        window.showToast("No se seleccionó ningún archivo.", { variant: "warning" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = window.XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = window.XLSX.utils.sheet_to_json(sheet);
+        if (!Array.isArray(json) || !json.length) {
+          window.showToast &&
+            window.showToast("El archivo Excel está vacío o no tiene datos.", {
+              variant: "warning",
+            });
+          return;
+        }
+        const valid = json.every(
+          (row) => "nombre" in row && "fecha" in row && "tags" in row
+        );
+        if (!valid) {
+          window.showToast &&
+            window.showToast(
+              "El archivo debe tener las columnas: nombre, fecha y tags",
+              { variant: "error" }
+            );
+          return;
+        }
+        const counters = json
+          .map((row) => ({
+            name: String(row.nombre || "").trim(),
+            date: String(row.fecha || "").trim(),
+            tags:
+              typeof row.tags === "string" && row.tags.trim()
+                ? row.tags.split(/,\s*/)
+                : [],
+          }))
+          .filter((c) => c.name && c.date);
+        if (!counters.length) {
+          window.showToast &&
+            window.showToast(
+              "No se encontraron contadores válidos en el archivo.",
+              { variant: "warning" }
+            );
+          return;
+        }
+        localStorage.setItem("counters", JSON.stringify(counters));
+        renderCounters();
+        window.showToast &&
+          window.showToast("Contadores importados correctamente", {
+            variant: "success",
+          });
+        if (closeView) closeView();
+      } catch (err) {
+        window.showToast &&
+          window.showToast(
+            "Error al importar el archivo. ¿Es un Excel válido?",
+            { variant: "error" }
+          );
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  });
+}
+
 // --- Modal de configuración: BottomSheet en móvil, Modal en escritorio ---
 function openConfigModal() {
   const isMobile = window.matchMedia("(max-width: 600px)").matches;
@@ -857,13 +987,8 @@ function openConfigModal() {
       <div class="units-section-title">
         <i data-lucide="file-spreadsheet" style="margin-right: 7px; color: #1d6f42"></i>Importar / Exportar
       </div>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap">
-        <button id="export-excel-btn" class="btn-backup" type="button"><i data-lucide="download"></i> Exportar a Excel</button>
-        <label for="import-excel-input" class="btn-restore" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="upload"></i> Importar desde Excel
-          <input id="import-excel-input" type="file" accept=".xlsx,.xls" style="display: none" />
-        </label>
-      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap" id="excel-actions-row"></div>
+      <input id="import-excel-input" type="file" accept=".xlsx,.xls" style="display: none" />
     </div>
     <div id="firebase-section" class="units-section-modal units-section-box" style="margin-top: 22px">
       <div class="units-section-title">
@@ -1029,104 +1154,7 @@ function openConfigModal() {
     document.removeEventListener("firebase-auth-changed", authChangedHandler);
   };
 
-  // Exportar a Excel
-  const exportBtn = root.querySelector("#export-excel-btn");
-  if (exportBtn) {
-    exportBtn.onclick = function () {
-      const XLSXlib = window.XLSX;
-      if (!XLSXlib) {
-        alert("No se ha cargado la librería XLSX.");
-        return;
-      }
-      const counters = getCounters();
-      const data = counters.map((c) => ({
-        nombre: c.name,
-        fecha: c.date,
-        tags: Array.isArray(c.tags) ? c.tags : [],
-      }));
-      const dataExcel = data.map((row) => ({
-        ...row,
-        tags: Array.isArray(row.tags) ? row.tags.join(", ") : "",
-      }));
-      const ws = XLSXlib.utils.json_to_sheet(dataExcel);
-      const wb = XLSXlib.utils.book_new();
-      XLSXlib.utils.book_append_sheet(wb, ws, "Contadores");
-      XLSXlib.writeFile(wb, "contadores.xlsx");
-    };
-  }
-
-  // Importar desde Excel
-  const importInput = root.querySelector("#import-excel-input");
-  if (importInput) {
-    importInput.addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (!file) {
-        window.showToast &&
-          window.showToast("No se seleccionó ningún archivo.", { variant: "warning" });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = function (evt) {
-        try {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = window.XLSX.read(data, { type: "array" });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const json = window.XLSX.utils.sheet_to_json(sheet);
-          if (!Array.isArray(json) || !json.length) {
-            window.showToast &&
-              window.showToast("El archivo Excel está vacío o no tiene datos.", {
-                variant: "warning",
-              });
-            return;
-          }
-          const valid = json.every(
-            (row) => "nombre" in row && "fecha" in row && "tags" in row
-          );
-          if (!valid) {
-            window.showToast &&
-              window.showToast(
-                "El archivo debe tener las columnas: nombre, fecha y tags",
-                { variant: "error" }
-              );
-            return;
-          }
-          const counters = json
-            .map((row) => ({
-              name: String(row.nombre || "").trim(),
-              date: String(row.fecha || "").trim(),
-              tags:
-                typeof row.tags === "string" && row.tags.trim()
-                  ? row.tags.split(/,\s*/)
-                  : [],
-            }))
-            .filter((c) => c.name && c.date);
-          if (!counters.length) {
-            window.showToast &&
-              window.showToast(
-                "No se encontraron contadores válidos en el archivo.",
-                { variant: "warning" }
-              );
-            return;
-          }
-          localStorage.setItem("counters", JSON.stringify(counters));
-          renderCounters();
-          window.showToast &&
-            window.showToast("Contadores importados correctamente", {
-              variant: "success",
-            });
-          view.close();
-        } catch (err) {
-          window.showToast &&
-            window.showToast(
-              "Error al importar el archivo. ¿Es un Excel válido?",
-              { variant: "error" }
-            );
-        }
-      };
-      reader.readAsArrayBuffer(file);
-      e.target.value = "";
-    });
-  }
+  wireExcelImportExport(root, { closeView: () => view.close() });
 
   // Botón cerrar del footer
   const closeFooterBtn = root.querySelector("#close-config-modal-footer");

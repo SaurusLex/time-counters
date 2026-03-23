@@ -6,11 +6,16 @@ import {
   getNextOccurrence as getNextOccurrenceFromUtils,
   advanceDateByFrequency as advanceDateByFrequencyFromUtils,
 } from "../utils/dateUtils.js";
+import {
+  createEmptyStateListItem,
+  refreshEmptyStateIcons,
+} from "../components/empty-state/empty-state.component.js";
 
 let _getConfig = () => ({});
 let _getFilterTags = () => [];
 let _getSortOrder = () => "recent";
 let _getTimeFilter = () => "all";
+let _getSearchQuery = () => "";
 let _openCounterModal = () => {};
 let _renderFilterTags = () => {};
 let _getDomListElement = () => null;
@@ -26,6 +31,7 @@ export function initCounterManager(dependencies) {
   _getFilterTags = dependencies.getFilterTags;
   _getSortOrder = dependencies.getSortOrder || _getSortOrder;
   _getTimeFilter = dependencies.getTimeFilter || _getTimeFilter;
+  _getSearchQuery = dependencies.getSearchQuery || _getSearchQuery;
   _openCounterModal = dependencies.openCounterModal;
   _renderFilterTags = dependencies.renderFilterTags;
   _getDomListElement = dependencies.getDomListElement;
@@ -214,12 +220,54 @@ export function renderCounters() {
     });
   }
 
+  const searchQ = (_getSearchQuery() || "").trim().toLowerCase();
+  if (searchQ) {
+    filtered = filtered.filter((c) => {
+      const name = String(c.name || "").toLowerCase();
+      if (name.includes(searchQ)) return true;
+      if (Array.isArray(c.tags)) {
+        return c.tags.some((t) => String(t).toLowerCase().includes(searchQ));
+      }
+      return false;
+    });
+  }
+
   const sortOrder = _getSortOrder();
   filtered = [...filtered].sort((a, b) => {
     const idA = parseInt(a.id, 10) || 0;
     const idB = parseInt(b.id, 10) || 0;
     return sortOrder === "recent" ? idB - idA : idA - idB;
   });
+
+  if (filtered.length === 0) {
+    const isTrulyEmpty = counters.length === 0;
+    const hasSearch = Boolean((_getSearchQuery() || "").trim());
+    const li = isTrulyEmpty
+      ? createEmptyStateListItem({
+          icon: "calendar-clock",
+          title: "Aún no tienes contadores",
+          subtitle:
+            "Crea uno para llevar la cuenta hasta una fecha o desde un evento.",
+          primaryAction: {
+            text: "Añadir contador",
+            icon: "plus",
+            color: "add",
+            onClick: () => _openCounterModal("new"),
+          },
+        })
+      : createEmptyStateListItem({
+          icon: "filter-x",
+          title: "Ningún contador coincide",
+          subtitle: hasSearch
+            ? "Prueba otras palabras o borra el texto de búsqueda. También puedes ajustar etiquetas o «Mostrar»."
+            : "Prueba a quitar filtros de etiquetas o a cambiar «Mostrar» en la barra de filtros.",
+          primaryAction: null,
+        });
+    list.appendChild(li);
+    refreshEmptyStateIcons(li);
+    _renderFilterTags();
+    return;
+  }
 
   filtered.forEach((counter, idxInFilteredArray) => {
     // Find the original index of the counter in the unfiltered 'counters' array
@@ -646,7 +694,9 @@ export function updateCountersTime() {
             const nameSpan = liElement.querySelector(".counter-name");
             if (nameSpan && !nameSpan.textContent.includes("(Finalizado)")) {
               nameSpan.textContent = counter.name + " (Finalizado)";
-              timeSpan.textContent = "Evento concluido";
+              if (timeSpan.textContent !== "Evento concluido") {
+                timeSpan.textContent = "Evento concluido";
+              }
               const dateSpan = liElement.querySelector(".counter-date");
               if (dateSpan)
                 dateSpan.textContent = `(Terminó el ${formatDateDisplay(globalEndDate, config.dateFormat || "dd/MM/yyyy")})`;
@@ -666,7 +716,9 @@ export function updateCountersTime() {
           diffText = formatDiff(diff, config, { from: occurrenceDate, to: now });
           text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
-        timeSpan.textContent = text;
+        if (timeSpan.textContent !== text) {
+          timeSpan.textContent = text;
+        }
         occurrenceRenderIdx++;
       }
     } else {
@@ -684,7 +736,9 @@ export function updateCountersTime() {
           diffText = formatDiff(diff, config, { from: target, to: now });
           text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
         }
-        timeSpan.textContent = text;
+        if (timeSpan.textContent !== text) {
+          timeSpan.textContent = text;
+        }
       }
     }
   });

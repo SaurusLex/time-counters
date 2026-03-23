@@ -14,6 +14,8 @@ const BUTTON_COLOR_CLASSES = {
   info: "btn-info",
   add: "btn-add",
   auth: "btn-auth",
+  backup: "btn-backup",
+  restore: "btn-restore",
   default: "btn-default",
 };
 

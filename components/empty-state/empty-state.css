@@ -1,0 +1,50 @@
+@import "../../design-tokens.css";
+
+ul#counters-list li.counters-empty-state {
+  display: block;
+  text-align: center;
+  padding: var(--space-8) var(--space-5);
+  background: var(--color-surface-card);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: none;
+  align-items: stretch;
+  justify-content: center;
+  transition: none;
+}
+ul#counters-list li.counters-empty-state:hover {
+  background: var(--color-surface-card);
+  box-shadow: none;
+}
+.counters-empty-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 22rem;
+  margin: 0 auto;
+}
+.counters-empty-icon {
+  width: 3rem;
+  height: 3rem;
+  color: #007bff;
+  opacity: 0.85;
+  stroke-width: 1.5;
+}
+.counters-empty-title {
+  margin: 0;
+  font-size: 1.15em;
+  font-weight: 700;
+  color: #0a2a43;
+}
+.counters-empty-subtitle {
+  margin: 0;
+  font-size: 0.95em;
+  line-height: 1.45;
+  color: #555;
+}
+
+@media (max-width: 600px) {
+  ul#counters-list li.counters-empty-state {
+    padding: var(--space-6) var(--space-4);
+  }
+}
