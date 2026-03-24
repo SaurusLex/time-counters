@@ -102,9 +102,9 @@
 }
 
 .toast--info {
-  background: #eaf4ff;
-  color: #1251a3;
-  border-color: #b6d6f6;
+  background: var(--color-primary-100);
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary-300);
 }
 
 .toast-content-row {
@@ -132,7 +132,7 @@
 }
 
 .toast--default .toast-progress {
-  background: #d6e8fc;
+  background: var(--color-primary-200);
 }
 
 .toast--success .toast-progress {
@@ -148,7 +148,7 @@
 }
 
 .toast--info .toast-progress {
-  background: #d6e8fc;
+  background: var(--color-primary-200);
 }
 
 .toast .toast-action-btn,
@@ -169,16 +169,16 @@
 
 .toast--default .toast-action-btn,
 .toast--default .toast-action-btn-fallback {
-  background: #007bff;
-  color: #fff;
-  border: 1px solid #007bff;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .toast--default .toast-action-btn:hover,
 .toast--default .toast-action-btn-fallback:hover {
-  background: #0056b3;
-  border-color: #0056b3;
-  color: #fff;
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: var(--color-on-primary);
 }
 
 .toast--success .toast-action-btn,
@@ -225,16 +225,16 @@
 
 .toast--info .toast-action-btn,
 .toast--info .toast-action-btn-fallback {
-  background: #1a73e8;
-  color: #fff;
-  border: 1px solid #1a73e8;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .toast--info .toast-action-btn:hover,
 .toast--info .toast-action-btn-fallback:hover {
-  background: #1251a3;
-  border-color: #1251a3;
-  color: #fff;
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  color: var(--color-on-primary);
 }
 
 #toast-bar,
@@ -246,7 +246,7 @@
 
 /* Un solo color por variante (paleta button.css) */
 .toast--default #toast-bar {
-  background: #007bff;
+  background: var(--color-primary);
 }
 
 .toast--success #toast-bar {
@@ -262,7 +262,7 @@
 }
 
 .toast--info #toast-bar {
-  background: #1a73e8;
+  background: var(--color-primary);
 }
 
 /* Móvil: snackbar (ancho casi completo, abajo, animación desde abajo) */

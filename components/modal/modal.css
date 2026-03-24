@@ -92,12 +92,12 @@
   margin-top: auto;
 }
 #save-counter-btn {
-  background: #007bff;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   border: none;
 }
 #save-counter-btn:hover {
-  background: #0056b3;
+  background: var(--color-primary-hover);
 }
 #cancel-counter-modal {
   background: #eee;

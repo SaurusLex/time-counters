@@ -43,6 +43,26 @@
   --color-surface-card: #ffffff;
   --color-surface-card-hover: #f7f7f7;
 
+  /*
+   * Azul primario (misma familia que los botones; de más claro a más intenso).
+   * 50–250: fondos y chips suaves; 300–400: bordes; 500: acción; 600: hover/texto oscuro.
+   */
+  --color-primary-50: #f7fbff;
+  --color-primary-100: #eaf4ff;
+  --color-primary-150: #e3f0ff;
+  --color-primary-200: #d0e7ff;
+  --color-primary-250: #cbe6ff;
+  --color-primary-300: #b6d6f6;
+  --color-primary-400: #7bb6e6;
+  --color-primary-500: #007bff;
+  --color-primary-600: #0056b3;
+
+  --color-primary: var(--color-primary-500);
+  --color-primary-hover: var(--color-primary-600);
+  --color-on-primary: #ffffff;
+  /* Para rgba() en sombras y overlays */
+  --color-primary-rgb: 0, 123, 255;
+
   /* Breakpoints (documentación; usar valores literales en media queries) */
   /* --bp-sm: 500px; --bp-md: 600px; --bp-lg: 700px; */
 }

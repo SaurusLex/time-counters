@@ -12,6 +12,7 @@ const AVATAR_SIZE_CLASSES = {
 };
 
 const AVATAR_COLOR_PALETTE = [
+  // First swatch matches --color-primary-500 (design-tokens.css)
   "#007bff",
   "#28a745",
   "#6f42c1",

@@ -114,8 +114,8 @@
   background: #f8f9fa;
 }
 .bottom-sheet-option.selected {
-  background: #eaf4ff;
-  color: #007bff;
+  background: var(--color-primary-100);
+  color: var(--color-primary);
 }
 
 .bottom-sheet-filter-section-title {

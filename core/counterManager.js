@@ -26,6 +26,31 @@ let _showDeleteConfirm = (opts) => {
 };
 let _onAfterDelete = () => {};
 
+function auditTimestampIso() {
+  return new Date().toISOString();
+}
+
+/** Si no hay `createdAt` guardado, intenta deducirlo del `id` antiguo (Date.now() al crear). */
+function inferCreatedAtFromLegacyId(id) {
+  const m = String(id ?? "").match(/^(\d{10,13})(?:\D|$)/);
+  if (!m) return null;
+  const n = parseInt(m[1], 10);
+  if (Number.isNaN(n)) return null;
+  const ms = m[1].length <= 10 ? n * 1000 : n;
+  return new Date(ms).toISOString();
+}
+
+/** Orden por fecha del evento: no recurrente → `date`; recurrente → siguiente ocurrencia (como en la tarjeta). */
+function getCounterSortTimestampMs(counter) {
+  const base = new Date(counter.date);
+  if (isNaN(base.getTime())) return 0;
+  if (!counter.frequency || counter.frequency === "none") {
+    return base.getTime();
+  }
+  const next = getNextOccurrenceFromUtils(base, counter.frequency);
+  return next ? next.getTime() : base.getTime();
+}
+
 export function initCounterManager(dependencies) {
   _getConfig = dependencies.getConfig;
   _getFilterTags = dependencies.getFilterTags;
@@ -93,6 +118,7 @@ export function deleteCounter(id, occurrenceDateString) {
     if (!counter.deletedOccurrences.includes(occurrenceISOString)) {
       counter.deletedOccurrences.push(occurrenceISOString);
     }
+    counter.updatedAt = auditTimestampIso();
     afterDeleteKind = "occurrence";
     // Do not remove the counter from the array, just mark the occurrence as deleted.
     // The counter.date (start of series) should also remain unchanged.
@@ -139,6 +165,9 @@ export function addOrUpdateCounter(counterData, editIndex) {
       }
     );
   }
+  const prev =
+    editIndex !== null && counters[editIndex] ? counters[editIndex] : null;
+  const nowIso = auditTimestampIso();
   const newCounter = {
     name,
     date,
@@ -151,6 +180,12 @@ export function addOrUpdateCounter(counterData, editIndex) {
       editIndex !== null && counters[editIndex]
         ? counters[editIndex].id
         : Date.now().toString(),
+    createdAt: prev
+      ? prev.createdAt ??
+        inferCreatedAtFromLegacyId(prev.id) ??
+        nowIso
+      : nowIso,
+    updatedAt: nowIso,
     originalDate:
       frequency !== "none"
         ? editIndex !== null &&
@@ -234,9 +269,12 @@ export function renderCounters() {
 
   const sortOrder = _getSortOrder();
   filtered = [...filtered].sort((a, b) => {
-    const idA = parseInt(a.id, 10) || 0;
-    const idB = parseInt(b.id, 10) || 0;
-    return sortOrder === "recent" ? idB - idA : idA - idB;
+    const ta = getCounterSortTimestampMs(a);
+    const tb = getCounterSortTimestampMs(b);
+    if (ta !== tb) {
+      return sortOrder === "recent" ? tb - ta : ta - tb;
+    }
+    return String(a.id ?? "").localeCompare(String(b.id ?? ""));
   });
 
   if (filtered.length === 0) {

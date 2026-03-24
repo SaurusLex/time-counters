@@ -10,31 +10,23 @@ import {
   handleLogoutClick,
   isSignedIn,
   getCurrentUser,
-} from "./firebase-auth.js";
+} from "./firebase/firebase-auth.js";
 import {
   backupToFirestore,
   restoreFromFirestore,
   renderFirebaseBackupInfo,
   syncAppConfigToFirestore,
-} from "./firebase-backup.js";
-import {
-  dateDiff,
-  formatDiff,
-  formatDateDisplay,
-  DATE_FORMAT_OPTIONS,
-  getNextOccurrence,
-  advanceDateByFrequency,
-} from "./utils/dateUtils.js";
+} from "./firebase/firebase-backup.js";
+import { formatDiff, DATE_FORMAT_OPTIONS } from "./utils/dateUtils.js";
 import {
   initCounterManager,
   getCounters,
-  saveCounters,
   renderCounters,
   updateCountersTime,
   deleteCounter as deleteCounterFromManager,
   addOrUpdateCounter,
-} from "./core/counterManager.js"; // Import addOrUpdateCounter
-import { showPopover, closePopover } from "./components/popover/popover.js";
+} from "./core/counterManager.js";
+import { showPopover } from "./components/popover/popover.js";
 import Modal from "./components/modal/modal.component.js";
 import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
 import { openFiltersBottomSheet } from "./components/filters-mobile-sheet/filters-mobile-sheet.js";
@@ -180,7 +172,6 @@ initCounterManager({
   },
 });
 
-// --- ELIMINADO: Popover de confirmación de borrado legacy ---
 // Crear botones de header con el componente createButton
 const addBtnContainer = document.getElementById("add-button-container");
 if (addBtnContainer) {
@@ -227,8 +218,6 @@ if (clearTimeContainer && window.createButton) {
 // --- MODAL NUEVO/EDITAR CONTADOR CON ETIQUETAS ---
 let modalTags = [];
 let editingIdx = null;
-let deleteIdx = null;
-let lastDeleted = null;
 let currentFilterTags = []; // Renamed for clarity and to avoid conflict if filterTags was meant to be local elsewhere.
 let counterModalRoot = null; // Contenedor actual: modal o BottomSheet
 let counterSheetView = null; // BottomSheet cuando se usa en móvil
@@ -628,28 +617,6 @@ document.getElementById("counters-list").onclick = function (e) {
   }
 };
 
-// --- ELIMINADO: closeDeletePopover y referencias a delete-popover ---
-
-function deleteCounter(idx, deleteAllOccurrences = false) {
-  // This function in index.js is now primarily a trigger for the popover or direct calls.
-  // The actual deletion logic is in counterManager.js.
-  // For simplicity, we'll call the manager's delete function directly from here if needed,
-  // or let the popover call it.
-  // However, the popover's buttons are already wired to call deleteCounterFromManager via the init step.
-
-  // If this function is called directly (e.g. not from popover), it should use the manager's delete.
-  // But the current setup has the popover buttons directly calling the manager's delete function.
-  // This local deleteCounter might become obsolete or just be for non-popover scenarios.
-
-  // console.log(`index.js deleteCounter called for index: ${idx}, deleteAll: ${deleteAllOccurrences}`);
-  // deleteCounterFromManager(idx, deleteAllOccurrences); // Example of direct call if needed
-
-  // The popover buttons are now the primary way to delete, and they call the manager's delete directly.
-  // So, this function might not be strictly needed anymore unless there are other call sites.
-  // For now, let's ensure it calls the manager's version if it *is* called.
-  deleteCounterFromManager(idx, deleteAllOccurrences);
-}
-
 function renderFilterTags() {
   const toolbar = document.querySelector(".counters-toolbar");
   if (toolbar) {
@@ -781,58 +748,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
   renderAuthStatusIndicator();
-  // Configuración de formulario y UI
-  const config = getConfig();
   renderFilterTags();
 
-  // Reemplazar botones del popover
-  const popoverActions = document.getElementById("popover-actions");
-  if (popoverActions) {
-    popoverActions.innerHTML = "";
-    popoverActions.appendChild(
-      window.createButton({
-        text: "Cancelar",
-        color: "secondary",
-        id: "popover-cancel",
-        onClick: closePopover,
-      })
-    );
-    popoverActions.appendChild(
-      window.createButton({
-        text: "Eliminar",
-        color: "danger",
-        id: "popover-confirm",
-        onClick: async function () {
-          if (deleteIdx !== null) {
-            const counters = getCounters();
-            lastDeleted = { ...counters[deleteIdx], idx: deleteIdx };
-            counters.splice(deleteIdx, 1);
-            saveCounters(counters);
-            renderCounters();
-            showToast("Contador eliminado", async function () {
-              const counters = getCounters();
-              if (lastDeleted) {
-                counters.splice(lastDeleted.idx, 0, { ...lastDeleted });
-                saveCounters(counters);
-                renderCounters();
-                lastDeleted = null;
-                if (isSignedIn()) {
-                  try {
-                    await backupToFirestore();
-                  } catch (e) {}
-                }
-              }
-            });
-            if (isSignedIn()) {
-              try {
-                await backupToFirestore();
-              } catch (e) {}
-            }
-          }
-        },
-      })
-    );
-  }
   renderCounters(); // <-- Asegura que la lista se muestre al cargar la página
   // Actualizar tiempos en las cards cada segundo
   setInterval(updateCountersTime, 1000);

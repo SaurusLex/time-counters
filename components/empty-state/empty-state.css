@@ -26,7 +26,7 @@ ul#counters-list li.counters-empty-state:hover {
 .counters-empty-icon {
   width: 3rem;
   height: 3rem;
-  color: #007bff;
+  color: var(--color-primary);
   opacity: 0.85;
   stroke-width: 1.5;
 }
