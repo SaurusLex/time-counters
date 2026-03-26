@@ -2,6 +2,8 @@
 // Componente BottomSheet para móvil: sale desde abajo, grabber, deja ver contenido detrás
 // Estilos: components/bottom-sheet/bottom-sheet.css (cargado en index.html)
 
+import { lockBodyScroll, unlockBodyScroll } from "../../utils/bodyScrollLock.js";
+
 class BottomSheet {
   constructor({ header = null, body = null, footer = null, closable = true, onClose = null } = {}) {
     this.header = header !== null ? header : '<span class="modal-title">Bottom Sheet</span>';
@@ -19,6 +21,7 @@ class BottomSheet {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
       background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center;
       z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.2s;
+      overscroll-behavior: none;
     `;
 
     this.sheet = document.createElement('div');
@@ -210,7 +213,7 @@ class BottomSheet {
         this.overlay.style.transition = "opacity 0.2s";
         this.overlay.style.opacity = "0";
         setTimeout(() => {
-          this._unlockBodyScroll();
+          unlockBodyScroll();
           this.sheet.style.transform = "";
           this.sheet.style.transition = "";
           this.overlay.style.visibility = "hidden";
@@ -238,18 +241,8 @@ class BottomSheet {
     });
   }
 
-  _lockBodyScroll() {
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-  }
-
-  _unlockBodyScroll() {
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
-  }
-
   open() {
-    this._lockBodyScroll();
+    lockBodyScroll();
     this._bindVisualViewport();
     this._onVisualViewportResize();
     this.overlay.style.visibility = 'visible';
@@ -260,7 +253,7 @@ class BottomSheet {
     this._unbindVisualViewport();
     this.overlay.style.opacity = '0';
     setTimeout(() => {
-      this._unlockBodyScroll();
+      unlockBodyScroll();
       this.overlay.style.visibility = 'hidden';
       if (typeof this.onClose === 'function') this.onClose();
     }, 200);

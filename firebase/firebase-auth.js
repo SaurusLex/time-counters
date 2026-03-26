@@ -17,6 +17,16 @@ export function isSignedIn() {
   return !!auth.currentUser;
 }
 
+/** Etiqueta legible del proveedor usado al iniciar sesión (p. ej. Google). */
+export function getSignInProviderLabel() {
+  const user = auth.currentUser;
+  if (!user) return "";
+  const id = user.providerData?.[0]?.providerId;
+  if (id === "google.com") return "Google";
+  if (id) return id;
+  return "Google";
+}
+
 export async function handleLoginClick() {
   try {
     const provider = new GoogleAuthProvider();

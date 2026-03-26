@@ -17,16 +17,18 @@ function createTag({ text, size = "md", removable = false, onRemove = null, sele
         };
     }
     if (removable) {
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'remove-tag-btn';
-        closeBtn.textContent = '×';
-        closeBtn.title = 'Eliminar etiqueta';
-        closeBtn.onclick = (e) => {
+        const removeHit = document.createElement('span');
+        removeHit.className = 'remove-tag';
+        removeHit.title = 'Eliminar etiqueta';
+        const iconEl = document.createElement('i');
+        iconEl.setAttribute('data-lucide', 'x');
+        iconEl.setAttribute('aria-hidden', 'true');
+        removeHit.appendChild(iconEl);
+        removeHit.addEventListener('click', (e) => {
             e.stopPropagation();
             if (onRemove) onRemove();
-        };
-        tag.appendChild(closeBtn);
+        });
+        tag.appendChild(removeHit);
     }
     return tag;
 }

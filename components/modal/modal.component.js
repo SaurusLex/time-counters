@@ -2,6 +2,8 @@
 // Componente Modal reutilizable en JavaScript puro
 // Estilos: components/modal/modal.css
 
+import { lockBodyScroll, unlockBodyScroll } from "../../utils/bodyScrollLock.js";
+
 class Modal {
   constructor({ header = null, body = null, footer = null, closable = true, onClose = null } = {}) {
     this.header = header !== null ? header : '<span class="modal-title">Modal</span>';
@@ -21,6 +23,7 @@ class Modal {
       background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
       padding: 5vh 0; box-sizing: border-box;
       z-index: 1000; visibility: hidden; opacity: 0; transition: opacity 0.2s;
+      overscroll-behavior: none;
     `;
     // Crear modal
     this.modal = document.createElement('div');
@@ -94,6 +97,7 @@ class Modal {
   }
 
   open() {
+    lockBodyScroll();
     this.overlay.style.visibility = 'visible';
     this.overlay.style.opacity = '1';
   }
@@ -102,11 +106,13 @@ class Modal {
     this.overlay.style.opacity = '0';
     setTimeout(() => {
       this.overlay.style.visibility = 'hidden';
+      unlockBodyScroll();
       if (typeof this.onClose === 'function') this.onClose();
     }, 200);
   }
 
   destroy() {
+    unlockBodyScroll();
     this.overlay.remove();
   }
 }

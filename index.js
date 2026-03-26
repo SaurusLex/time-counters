@@ -10,6 +10,7 @@ import {
   handleLogoutClick,
   isSignedIn,
   getCurrentUser,
+  getSignInProviderLabel,
 } from "./firebase/firebase-auth.js";
 import {
   backupToFirestore,
@@ -18,6 +19,7 @@ import {
   syncAppConfigToFirestore,
 } from "./firebase/firebase-backup.js";
 import { formatDiff, DATE_FORMAT_OPTIONS } from "./utils/dateUtils.js";
+import { lockBodyScroll, unlockBodyScroll } from "./utils/bodyScrollLock.js";
 import {
   initCounterManager,
   getCounters,
@@ -266,6 +268,7 @@ function openCounterModal(mode = "new", idx = null) {
   } else {
     counterModalRoot = modalContent;
     modal.style.display = "flex";
+    lockBodyScroll();
   }
 
   const root = getCounterRoot();
@@ -346,6 +349,7 @@ function closeCounterModal() {
     counterSheetView.close();
   } else {
     document.getElementById("counter-modal").style.display = "none";
+    unlockBodyScroll();
   }
   counterModalRoot = null;
   counterSheetView = null;
@@ -373,20 +377,19 @@ function renderTagSuggestions() {
     const tagEl = window.createTag({
       text: tag,
       removable: false,
-      onRemove: null,
-    });
-    if (!tagEl) return; // Si no se pudo crear el tag, saltar
-    tagEl.classList.add("tag-suggestion");
-    // Solo asignar onclick si el elemento está en el DOM
-    tagEl.addEventListener &&
-      tagEl.addEventListener("click", () => {
+      selectable: true,
+      selected: false,
+      onSelect: () => {
         modalTags.push(tag);
         renderTagsList();
         renderTagSuggestions();
-      });
+      },
+    });
+    if (!tagEl) return;
     suggestionsDiv.appendChild(tagEl);
   });
-  suggestionsDiv.style.display = allTags.length ? "flex" : "none";
+  const row = root?.querySelector("#tag-suggestions-row");
+  if (row) row.style.display = allTags.length ? "flex" : "none";
 }
 
 function renderTagsList() {
@@ -427,6 +430,9 @@ function renderTagsList() {
     addTagBtn.replaceWith(newBtn);
   }
   renderTagSuggestions();
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 }
 
 document.getElementById("tag-input").addEventListener("keydown", function (e) {
@@ -998,7 +1004,7 @@ function openConfigModal() {
     dateFormatContainer.appendChild(dropdown);
   }
 
-  // Sección cuenta: login, backup, restore (Firebase en backend, caja negra para el usuario)
+  // Sección cuenta: login, última sincronización (automática), cerrar sesión
   function renderFirebaseAuthArea() {
     const area = root.querySelector("#firebase-auth-area");
     const titleEl = root.querySelector("#account-section-title");
@@ -1013,20 +1019,6 @@ function openConfigModal() {
     area.innerHTML = "";
     if (isSignedIn()) {
       const btnFullWidth = "100%";
-      const backupBtn = document.createElement("button");
-      backupBtn.id = "firebase-backup-btn";
-      backupBtn.className = "btn-backup";
-      backupBtn.type = "button";
-      backupBtn.style.width = btnFullWidth;
-      backupBtn.innerHTML = '<i data-lucide="cloud-upload"></i> Guardar en la nube';
-      backupBtn.onclick = () => backupToFirestore({ showSuccessToast: true });
-      const restoreBtn = document.createElement("button");
-      restoreBtn.id = "firebase-restore-btn";
-      restoreBtn.className = "btn-restore";
-      restoreBtn.type = "button";
-      restoreBtn.style.width = btnFullWidth;
-      restoreBtn.innerHTML = '<i data-lucide="cloud-download"></i> Restaurar desde la nube';
-      restoreBtn.onclick = restoreFromFirestore;
       const logoutBtn = document.createElement("button");
       logoutBtn.className = "btn-secondary";
       logoutBtn.type = "button";
@@ -1034,27 +1026,21 @@ function openConfigModal() {
       logoutBtn.innerHTML = '<i data-lucide="log-out"></i> Cerrar sesión';
       logoutBtn.onclick = handleLogoutClick;
       const hintStyle = "font-size: 0.85em; color: #666; margin: 4px 0 12px 0;";
-      const backupHint = document.createElement("p");
-      backupHint.className = "firebase-hint";
-      backupHint.style.cssText = hintStyle;
-      backupHint.id = "firebase-backup-info";
-      const restoreHint = document.createElement("p");
-      restoreHint.className = "firebase-hint";
-      restoreHint.style.cssText = hintStyle;
-      restoreHint.textContent = "Restaurar sustituye todos los contadores locales por los de la nube.";
+      const methodLine = document.createElement("p");
+      methodLine.className = "firebase-hint";
+      methodLine.style.cssText = hintStyle;
+      methodLine.textContent = `Inicio de sesión: ${getSignInProviderLabel()}`;
+      const syncInfo = document.createElement("p");
+      syncInfo.className = "firebase-hint";
+      syncInfo.style.cssText = hintStyle;
+      syncInfo.id = "firebase-backup-info";
       const btnContainer = document.createElement("div");
       btnContainer.style.cssText = "display: flex; flex-direction: column; gap: 12px;";
-      const guardarRow = document.createElement("div");
-      guardarRow.appendChild(backupBtn);
-      guardarRow.appendChild(backupHint);
-      btnContainer.appendChild(guardarRow);
-      const restoreRow = document.createElement("div");
-      restoreRow.appendChild(restoreBtn);
-      restoreRow.appendChild(restoreHint);
-      btnContainer.appendChild(restoreRow);
+      btnContainer.appendChild(methodLine);
+      btnContainer.appendChild(syncInfo);
       btnContainer.appendChild(logoutBtn);
       area.appendChild(btnContainer);
-      renderFirebaseBackupInfo(backupHint);
+      renderFirebaseBackupInfo(syncInfo);
     } else {
       const loginBtn = document.createElement("button");
       loginBtn.className = "btn-backup";
