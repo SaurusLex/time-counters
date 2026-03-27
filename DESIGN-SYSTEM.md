@@ -35,6 +35,21 @@ Sistema de diseño basado en tokens CSS con grid de 4px.
 | `--size-btn-lg` | 48px | botón lg |
 | `--size-input` | 40px | altura input, select |
 
+### Tipografía (headings)
+
+Escala en `rem` (base 16px). Usar `h1`–`h6` en HTML o clases `.heading-1`–`.heading-6` cuando no aplique un nivel semántico.
+
+| Token | Valor | Uso típico |
+|-------|-------|------------|
+| `--font-heading-1` | 1.5rem (24px) | Título de página (`h1`) |
+| `--font-heading-2` | 1.375rem (22px) | Bloque principal (`h2`) |
+| `--font-heading-3` | 1.25rem (20px) | Título de modal / sección destacada (`h3`, `.modal-title`) |
+| `--font-heading-4` | 1.125rem (18px) | Subsección (`h4`) |
+| `--font-heading-5` | 1.0625rem (17px) | Títulos de bloque en modales (p. ej. configuración) |
+| `--font-heading-6` | 1rem (16px) | Etiqueta de sección fina (`h6`) |
+| `--font-body` | 1rem | Cuerpo por defecto |
+| `--font-body-sm` | 0.875rem | Texto secundario compacto |
+
 ### Border radius
 
 | Token | Valor | Uso |

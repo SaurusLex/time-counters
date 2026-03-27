@@ -94,6 +94,21 @@
   border-radius: 0;
 }
 
+/* Misma lógica que modal.css para configuración (sheet) */
+.bottom-sheet .modal-body:has(.config-modal-layout) {
+  padding: 0;
+}
+.bottom-sheet .modal-body .config-modal-section {
+  padding: var(--space-3) var(--space-5) var(--space-5) var(--space-5);
+  box-sizing: border-box;
+}
+.bottom-sheet .modal-body .config-modal-layout > .divider {
+  width: 100%;
+  min-width: 100%;
+  max-width: none;
+  align-self: stretch;
+}
+
 /* Opciones (bottom-sheet/bottom-sheet-options.js, filters-mobile-sheet) */
 .bottom-sheet-options-list {
   list-style: none;

@@ -1,7 +1,9 @@
 @import "design-tokens.css";
+@import "components/divider/divider.css";
 
 body {
   font-family: Arial, sans-serif;
+  font-size: var(--font-body);
   background: var(--color-bg-page);
   margin: 0;
   padding: 0;
@@ -24,7 +26,6 @@ body {
     box-sizing: border-box;
   }
   h1 {
-    font-size: 1.5rem;
     margin-top: 0;
     margin-bottom: var(--space-4);
     text-align: left;
@@ -87,8 +88,73 @@ body {
   }
 }
 h1 {
+  font-size: var(--font-heading-1);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: var(--space-4);
   text-align: center;
   color: #333;
+}
+h2 {
+  font-size: var(--font-heading-2);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: var(--space-6) 0 var(--space-3);
+}
+h3 {
+  font-size: var(--font-heading-3);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: var(--space-5) 0 var(--space-2);
+}
+h4 {
+  font-size: var(--font-heading-4);
+  font-weight: 600;
+  line-height: 1.35;
+  margin: var(--space-4) 0 var(--space-2);
+}
+h5 {
+  font-size: var(--font-heading-5);
+  font-weight: 600;
+  line-height: 1.35;
+  margin: var(--space-4) 0 var(--space-2);
+}
+h6 {
+  font-size: var(--font-heading-6);
+  font-weight: 600;
+  line-height: 1.4;
+  margin: var(--space-3) 0 var(--space-2);
+}
+.heading-1 {
+  font-size: var(--font-heading-1);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.heading-2 {
+  font-size: var(--font-heading-2);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.heading-3 {
+  font-size: var(--font-heading-3);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.heading-4 {
+  font-size: var(--font-heading-4);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.heading-5 {
+  font-size: var(--font-heading-5);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.heading-6 {
+  font-size: var(--font-heading-6);
+  font-weight: 600;
+  line-height: 1.4;
 }
 form {
   display: flex;
@@ -692,10 +758,10 @@ select.form-control {
   min-width: 0;
 }
 .units-section-title svg.lucide {
+  display: block;
   width: 1.1em;
   height: 1.1em;
-  margin-right: 6px;
-  vertical-align: middle;
+  margin: 0;
   flex-shrink: 0;
 }
 @media (max-width: 700px) {
@@ -732,9 +798,9 @@ select.form-control {
   position: relative;
 }
 .modern-modal-header .modal-title {
-  font-size: 1.18em;
+  font-size: var(--font-heading-3);
   font-weight: 600;
-  color: #1a2a3a;
+  color: var(--color-text-heading);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -895,24 +961,18 @@ select.form-control {
   outline: none;
 }
 
-/* Caja visual para la sección de unidades de medida en el modal de configuración */
-.units-section-box {
-  background: var(--color-primary-50);
-  border: 1.5px solid #e3e3e3;
-  border-radius: 10px;
-  padding: 18px 18px 12px 18px;
-  margin-top: 10px;
-  margin-bottom: 0;
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.06);
-}
+/* Títulos de bloque en el modal de configuración (layout: modal.css + bottom-sheet.css) */
 .units-section-title {
-  font-size: 1.08em;
+  font-size: var(--font-heading-5);
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-text-heading-muted);
   margin-bottom: 10px;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 7px;
+  justify-content: flex-start;
+  line-height: 1.25;
+  gap: 6px;
 }
 .units-buttons-row {
   display: flex;
@@ -958,11 +1018,6 @@ select.form-control {
   background: #ffffff;
   border-radius: 6px;
   border: 1px dashed #cbd6e6;
-}
-@media (max-width: 600px) {
-  .units-section-box {
-    padding: 10px 4vw 8px 4vw;
-  }
 }
 
 /* Firebase section: botones a ancho completo */

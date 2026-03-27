@@ -33,6 +33,7 @@ import Modal from "./components/modal/modal.component.js";
 import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
 import { openFiltersBottomSheet } from "./components/filters-mobile-sheet/filters-mobile-sheet.js";
 import "./components/dropdown/dropdown.component.js";
+import { dividerHtml } from "./components/divider/divider.component.js";
 
 function getConfig() {
   const defaultConfig = {
@@ -885,43 +886,50 @@ function openConfigModal() {
   `;
 
   const body = `
-    <div class="units-section-modal units-section-box" style="margin-top: 10px">
-      <div class="units-section-title">
-        <i data-lucide="clock" style="margin-right: 7px"></i>Unidades de tiempo
-      </div>
-      <div id="config-form-modal" class="units-buttons-row">
-        <button type="button" class="unit-btn" data-unit="years">Años</button>
-        <button type="button" class="unit-btn" data-unit="months">Meses</button>
-        <button type="button" class="unit-btn" data-unit="weeks">Semanas</button>
-        <button type="button" class="unit-btn" data-unit="days">Días</button>
-        <button type="button" class="unit-btn" data-unit="hours">Horas</button>
-        <button type="button" class="unit-btn" data-unit="minutes">Min</button>
-        <button type="button" class="unit-btn" data-unit="seconds">Seg</button>
-      </div>
-      <div id="units-preview" class="units-preview"></div>
-    </div>
-    <div id="date-format-section" class="units-section-modal units-section-box" style="margin-top: 22px">
-      <div class="units-section-title">
-        <i data-lucide="calendar" style="margin-right: 7px"></i>Formato de fecha
-      </div>
-      <div id="date-format-dropdown-container"></div>
-    </div>
-    <div class="units-section-modal units-section-box" style="margin-top: 22px">
-      <div class="units-section-title">
-        <i data-lucide="file-spreadsheet" style="margin-right: 7px; color: #1d6f42"></i>Importar / Exportar
-      </div>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap" id="excel-actions-row"></div>
-      <input id="import-excel-input" type="file" accept=".xlsx,.xls" style="display: none" />
-    </div>
-    <div id="firebase-section" class="units-section-modal units-section-box" style="margin-top: 22px">
-      <div class="units-section-title">
-        <i data-lucide="log-in" style="margin-right: 7px"></i><span id="account-section-title">Iniciar sesión</span>
-      </div>
-      <div id="firebase-auth-area"></div>
+    <div class="config-modal-layout">
+      <section class="config-modal-section" aria-labelledby="config-section-units-title">
+        <div id="config-section-units-title" class="units-section-title">
+          <i data-lucide="clock"></i>Unidades de tiempo
+        </div>
+        <div id="config-form-modal" class="units-buttons-row">
+          <button type="button" class="unit-btn" data-unit="years">Años</button>
+          <button type="button" class="unit-btn" data-unit="months">Meses</button>
+          <button type="button" class="unit-btn" data-unit="weeks">Semanas</button>
+          <button type="button" class="unit-btn" data-unit="days">Días</button>
+          <button type="button" class="unit-btn" data-unit="hours">Horas</button>
+          <button type="button" class="unit-btn" data-unit="minutes">Min</button>
+          <button type="button" class="unit-btn" data-unit="seconds">Seg</button>
+        </div>
+        <div id="units-preview" class="units-preview"></div>
+      </section>
+      ${dividerHtml()}
+      <section id="date-format-section" class="config-modal-section" aria-labelledby="config-section-date-title">
+        <div id="config-section-date-title" class="units-section-title">
+          <i data-lucide="calendar"></i>Formato de fecha
+        </div>
+        <div id="date-format-dropdown-container"></div>
+      </section>
+      ${dividerHtml()}
+      <section class="config-modal-section" aria-labelledby="config-section-excel-title">
+        <div id="config-section-excel-title" class="units-section-title">
+          <i data-lucide="file-spreadsheet"></i>Importar / Exportar
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap" id="excel-actions-row"></div>
+        <input id="import-excel-input" type="file" accept=".xlsx,.xls" style="display: none" />
+      </section>
+      ${dividerHtml()}
+      <section id="firebase-section" class="config-modal-section" aria-labelledby="config-section-account-title">
+        <div id="config-section-account-title" class="units-section-title">
+          <i data-lucide="log-in"></i><span id="account-section-title">Iniciar sesión</span>
+        </div>
+        <div id="firebase-auth-area"></div>
+      </section>
     </div>
   `;
 
-  const footer = `<button type="button" id="close-config-modal-footer">Cerrar</button>`;
+  const footer = isMobile
+    ? ""
+    : `<button type="button" id="close-config-modal-footer">Cerrar</button>`;
 
   const view = isMobile
     ? new BottomSheet({ header, body, footer, closable: true, onClose: () => {} })

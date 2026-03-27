@@ -1,0 +1,14 @@
+/* Línea horizontal de 1px — <div> + border-top (más fiable que <hr> + background en todos los motores) */
+.divider {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-top: 1px solid #e3e3e3;
+  background: transparent;
+  flex-shrink: 0;
+  align-self: stretch;
+}

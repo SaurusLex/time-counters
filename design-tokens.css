@@ -43,6 +43,10 @@
   --color-surface-card: #ffffff;
   --color-surface-card-hover: #f7f7f7;
 
+  /* Texto de títulos en modales (cabecera y bloques) — gris, no negro */
+  --color-text-heading: #2a2a2a;
+  --color-text-heading-muted: #404040;
+
   /*
    * Azul primario (misma familia que los botones; de más claro a más intenso).
    * 50–250: fondos y chips suaves; 300–400: bordes; 500: acción; 600: hover/texto oscuro.
@@ -62,6 +66,20 @@
   --color-on-primary: #ffffff;
   /* Para rgba() en sombras y overlays */
   --color-primary-rgb: 0, 123, 255;
+
+  /*
+   * Tipografía — escala de headings (rem; base del documento 16px).
+   * h1: página; h2–h3: bloques; h4–h5: secciones / modales; h6: etiquetas finas.
+   */
+  --font-heading-1: 1.5rem; /* 24px */
+  --font-heading-2: 1.375rem; /* 22px */
+  --font-heading-3: 1.25rem; /* 20px */
+  --font-heading-4: 1.125rem; /* 18px */
+  --font-heading-5: 1.0625rem; /* 17px */
+  --font-heading-6: 1rem; /* 16px */
+
+  --font-body: 1rem;
+  --font-body-sm: 0.875rem; /* 14px */
 
   /* Breakpoints (documentación; usar valores literales en media queries) */
   /* --bp-sm: 500px; --bp-md: 600px; --bp-lg: 700px; */

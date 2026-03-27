@@ -48,9 +48,9 @@
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .modal-title {
-  font-size: 1.2em;
+  font-size: var(--font-heading-3);
   font-weight: bold;
-  color: #222;
+  color: var(--color-text-heading);
 }
 .modal-close {
   font-size: 1.5em;
@@ -148,4 +148,25 @@
 .modal-box .modal-body {
   overflow-y: auto;
   min-height: 0;
+}
+
+/* Modal de configuración: cuerpo sin padding; padding en .config-modal-section; .divider al 100% del ancho */
+.modal-body:has(.config-modal-layout) {
+  padding: 0;
+}
+.config-modal-layout {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+.modal-body .config-modal-section {
+  padding: var(--space-3) var(--space-6) var(--space-5) var(--space-6);
+  box-sizing: border-box;
+}
+.modal-body .config-modal-layout > .divider {
+  width: 100%;
+  min-width: 100%;
+  max-width: none;
+  align-self: stretch;
 }
