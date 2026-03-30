@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && esbuild index.js --bundle --format=iife --outfile=dist/app.js --minify --sourcemap && node scripts/prepare-dist.js",
-    "dev": "esbuild index.js --bundle --format=iife --outfile=dist/app.js --sourcemap --watch"
+    "dev": "node scripts/prepare-dist.js && esbuild index.js --bundle --format=iife --outfile=dist/app.js --sourcemap --watch"
   },
   "repository": {
     "type": "git",

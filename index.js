@@ -18,8 +18,20 @@ import {
   renderFirebaseBackupInfo,
   syncAppConfigToFirestore,
 } from "./firebase/firebase-backup.js";
-import { formatDiff, DATE_FORMAT_OPTIONS } from "./utils/dateUtils.js";
+import {
+  formatDiff,
+  DATE_FORMAT_OPTIONS,
+  formatDateDisplay,
+  parseDateInput,
+  dateToIsoYMD,
+  getDateFormatPlaceholder,
+  getCalendarDateFromStoredValue,
+} from "./utils/dateUtils.js";
 import { lockBodyScroll, unlockBodyScroll } from "./utils/bodyScrollLock.js";
+import {
+  initDateInputsIn,
+  closeActiveCalendarPopover,
+} from "./components/date-input/date-input.component.js";
 import {
   initCounterManager,
   getCounters,
@@ -229,6 +241,33 @@ function getCounterRoot() {
   return counterModalRoot;
 }
 
+function getModalDateFormatKey() {
+  const config = getConfig();
+  const validValues = DATE_FORMAT_OPTIONS.map((o) => o.value);
+  return validValues.includes(config.dateFormat) ? config.dateFormat : "dd/MM/yyyy";
+}
+
+function applyModalDateInputsFromConfig(root) {
+  const df = getModalDateFormatKey();
+  const ph = getDateFormatPlaceholder(df);
+  const dateInput = root?.querySelector("#modal-counter-date");
+  const endDateInput = root?.querySelector("#modal-counter-end-date");
+  if (dateInput) {
+    dateInput.placeholder = ph;
+    dateInput.title = ph;
+  }
+  if (endDateInput) {
+    endDateInput.placeholder = ph;
+    endDateInput.title = ph;
+  }
+}
+
+
+function initModalCalendarPickers() {
+  const form = document.getElementById("counter-form-modal");
+  initDateInputsIn(form, { getFormatKey: getModalDateFormatKey });
+}
+
 function openCounterModal(mode = "new", idx = null) {
   const isMobile = window.matchMedia("(max-width: 600px)").matches;
   const modal = document.getElementById("counter-modal");
@@ -285,26 +324,33 @@ function openCounterModal(mode = "new", idx = null) {
 
   if (!nameInput || !dateInput || !frequencyDropdown || !frequencyHiddenInput) return;
 
+  applyModalDateInputsFromConfig(root);
+  const df = getModalDateFormatKey();
+
   if (mode === "edit" && idx !== null) {
     const counters = getCounters();
     const counter = counters[idx];
     nameInput.value = counter.name;
     if (counter.date) {
-      const dateObj = new Date(counter.date);
-      if (!isNaN(dateObj.getTime())) {
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-        const day = String(dateObj.getDate()).padStart(2, "0");
-        dateInput.value = `${year}-${month}-${day}`;
+      const instant = new Date(counter.date);
+      const calendarDate = getCalendarDateFromStoredValue(counter.date);
+      if (calendarDate && !isNaN(instant.getTime())) {
+        dateInput.value = formatDateDisplay(calendarDate, df);
         if (counter.date.includes("T")) {
-          const hours = String(dateObj.getHours()).padStart(2, "0");
-          const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+          const hours = String(instant.getHours()).padStart(2, "0");
+          const minutes = String(instant.getMinutes()).padStart(2, "0");
           timeInput.value = `${hours}:${minutes}`;
         } else {
           timeInput.value = "";
         }
       } else {
-        dateInput.value = counter.date;
+        const iso = String(counter.date).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) {
+          const d = new Date(+iso[1], +iso[2] - 1, +iso[3]);
+          dateInput.value = !isNaN(d.getTime()) ? formatDateDisplay(d, df) : counter.date;
+        } else {
+          dateInput.value = counter.date;
+        }
         timeInput.value = "";
       }
     } else {
@@ -315,7 +361,17 @@ function openCounterModal(mode = "new", idx = null) {
     const freq = counter.frequency || "none";
     frequencyDropdown.setValue(freq);
     frequencyHiddenInput.value = freq;
-    if (endDateInput) endDateInput.value = counter.endDate || "";
+    if (endDateInput) {
+      if (counter.endDate) {
+        const endCal = getCalendarDateFromStoredValue(counter.endDate);
+        endDateInput.value =
+          endCal && !isNaN(endCal.getTime())
+            ? formatDateDisplay(endCal, df)
+            : counter.endDate;
+      } else {
+        endDateInput.value = "";
+      }
+    }
     updateFrequencyDependentUI(root, freq);
     if (title) title.textContent = "Editar contador";
     editingIdx = idx;
@@ -346,6 +402,7 @@ function updateClearTimeButtonState(root) {
 }
 
 function closeCounterModal() {
+  closeActiveCalendarPopover();
   if (counterSheetView) {
     counterSheetView.close();
   } else {
@@ -574,14 +631,36 @@ document
   .addEventListener("submit", async function (e) {
     e.preventDefault();
     const name = document.getElementById("modal-counter-name").value.trim();
-    const date = document.getElementById("modal-counter-date").value;
+    const dateRaw = document.getElementById("modal-counter-date").value;
     const time = document.getElementById("modal-counter-time").value;
     const frequency = document.getElementById("modal-counter-frequency").value; // Added
-    const endDate = document.getElementById("modal-counter-end-date").value; // Added
+    const endDateRaw = document.getElementById("modal-counter-end-date").value; // Added
 
-    if (!name || !date) return;
-    // Validate that end date is after start date if frequency is not 'none'
-    if (frequency !== "none" && endDate && new Date(endDate) < new Date(date)) {
+    if (!name || !dateRaw.trim()) return;
+
+    const df = getModalDateFormatKey();
+    const startParsed = parseDateInput(dateRaw, df);
+    if (!startParsed) {
+      alert(
+        `La fecha de inicio no es válida. Usa el formato de Configuración (${getDateFormatPlaceholder(df)}).`
+      );
+      return;
+    }
+    const dateIso = dateToIsoYMD(startParsed);
+
+    let endDateIso = "";
+    if (frequency !== "none" && endDateRaw.trim()) {
+      const endParsed = parseDateInput(endDateRaw, df);
+      if (!endParsed) {
+        alert(
+          `La fecha de finalización no es válida. Usa el formato de Configuración (${getDateFormatPlaceholder(df)}).`
+        );
+        return;
+      }
+      endDateIso = dateToIsoYMD(endParsed);
+    }
+
+    if (frequency !== "none" && endDateIso && endDateIso < dateIso) {
       alert(
         "La fecha de finalización no puede ser anterior a la fecha de inicio del contador."
       );
@@ -589,10 +668,10 @@ document
     }
 
     // Combinar fecha y hora en un solo valor (si hay hora)
-    let combinedDate = date;
+    let combinedDate = dateIso;
     if (time) {
       // Formato YYYY-MM-DDTHH:MM para que new Date(...) pueda interpretarlo
-      combinedDate = `${date}T${time}`;
+      combinedDate = `${dateIso}T${time}`;
     }
 
     const counterData = {
@@ -600,7 +679,7 @@ document
       date: combinedDate,
       tags: [...modalTags],
       frequency,
-      endDate: frequency !== "none" ? endDate : "", // Save endDate only if recurring
+      endDate: frequency !== "none" ? endDateIso : "", // Save endDate only if recurring
     };
 
     // Use the manager function to add or update the counter
@@ -733,6 +812,7 @@ function renderAuthStatusIndicator() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  initModalCalendarPickers();
   initFrequencyDropdown();
   initSortDropdown();
   initTimeFilterDropdown();
@@ -1075,4 +1155,3 @@ function openConfigModal() {
 }
 
 // El botón de configuración se crea con createButton y ya tiene onClick: openConfigModal
-

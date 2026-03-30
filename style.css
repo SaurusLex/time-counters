@@ -314,6 +314,12 @@ select.form-control {
   margin-top: var(--space-2);
   min-width: 0;
 }
+#counter-form-modal .date-time-row .modal-date-field-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+}
 #counter-form-modal .date-time-row .form-control,
 #counter-form-modal .time-input-wrapper .form-control {
   flex: 1;

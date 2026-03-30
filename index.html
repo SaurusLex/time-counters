@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="components/dropdown/dropdown.css" />
     <link rel="stylesheet" href="components/avatar/avatar.css" />
     <link rel="stylesheet" href="components/bottom-sheet/bottom-sheet.css" />
+    <link rel="stylesheet" href="components/date-input/date-input.css" />
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   </head>
   <body>
@@ -66,7 +67,17 @@
               required
             />
             <div class="date-time-row">
-              <input type="date" id="modal-counter-date" class="form-control" required />
+              <div class="date-input modal-date-field-wrap">
+                <input
+                  type="text"
+                  id="modal-counter-date"
+                  class="form-control date-input__field"
+                  autocomplete="off"
+                  inputmode="numeric"
+                  required
+                />
+                <span class="date-input__icon" aria-hidden="true"><i data-lucide="calendar"></i></span>
+              </div>
               <div class="time-input-wrapper">
                 <input type="time" id="modal-counter-time" class="form-control" />
                 <div id="clear-time-btn-container" style="flex-shrink: 0;"></div>
@@ -91,12 +102,17 @@
               <label for="modal-counter-end-date" class="form-label"
                 >Fecha de finalización (opcional):</label
               >
-              <input
-                type="date"
-                id="modal-counter-end-date"
-                name="modal-counter-end-date"
-                class="form-control"
-              />
+              <div class="date-input modal-date-field-wrap">
+                <input
+                  type="text"
+                  id="modal-counter-end-date"
+                  name="modal-counter-end-date"
+                  class="form-control date-input__field"
+                  autocomplete="off"
+                  inputmode="numeric"
+                />
+                <span class="date-input__icon" aria-hidden="true"><i data-lucide="calendar"></i></span>
+              </div>
             </div>
 
             <div class="tags-section">

@@ -110,6 +110,101 @@ export function formatDateDisplay(date, formatKey = "dd/MM/yyyy", opts = {}) {
   return dateStr;
 }
 
+function isValidCalendarDay(year, month, day) {
+  if (month < 1 || month > 12 || day < 1) return false;
+  const d = new Date(year, month - 1, day);
+  return (
+    d.getFullYear() === year &&
+    d.getMonth() === month - 1 &&
+    d.getDate() === day
+  );
+}
+
+/**
+ * Parsea texto de fecha según el mismo formatKey que formatDateDisplay.
+ * Años de 2 dígitos (dd/MM/yy): 00–99 → 2000–2099.
+ * @returns {Date|null}
+ */
+export function parseDateInput(str, formatKey = "dd/MM/yyyy") {
+  const s = String(str).trim();
+  if (!s) return null;
+
+  let dd;
+  let mm;
+  let yy;
+
+  switch (formatKey) {
+    case "dd-MM-yyyy": {
+      const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (!m) return null;
+      dd = +m[1];
+      mm = +m[2];
+      yy = +m[3];
+      break;
+    }
+    case "dd/MM/yy": {
+      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+      if (!m) return null;
+      dd = +m[1];
+      mm = +m[2];
+      yy = 2000 + +m[3];
+      break;
+    }
+    case "dd/MM/yyyy":
+    default: {
+      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (!m) return null;
+      dd = +m[1];
+      mm = +m[2];
+      yy = +m[3];
+      break;
+    }
+  }
+
+  if (!isValidCalendarDay(yy, mm, dd)) return null;
+  return new Date(yy, mm - 1, dd);
+}
+
+/** ISO YYYY-MM-DD en hora local (para almacenar / combinar con hora). */
+export function dateToIsoYMD(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Fecha de calendario local para mostrar/editar (modal, etc.).
+ * Cadenas solo-fecha YYYY-MM-DD se interpretan en hora local (no medianoche UTC).
+ * Si hay hora (incluye "T"), se usa el instante parseado por el motor.
+ */
+export function getCalendarDateFromStoredValue(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  if (s.includes("T")) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const y = +m[1];
+    const mo = +m[2];
+    const day = +m[3];
+    if (!isValidCalendarDay(y, mo, day)) return null;
+    return new Date(y, mo - 1, day);
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Ejemplo corto para placeholder (p. ej. "16/03/2026") según DATE_FORMAT_OPTIONS. */
+export function getDateFormatPlaceholder(formatKey = "dd/MM/yyyy") {
+  const opt = DATE_FORMAT_OPTIONS.find((o) => o.value === formatKey);
+  if (!opt) return "16/03/2026";
+  const first = opt.label.split(/\s/)[0];
+  return first || "16/03/2026";
+}
+
 /** Devuelve true si el texto formateado es singular (ej. "1 mes", "menos de un mes") */
 export function isFirstValueSingular(formattedDiff) {
   return /^1\s/.test(formattedDiff) || /^menos de (un|una) /.test(formattedDiff);

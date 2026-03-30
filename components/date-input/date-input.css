@@ -1,0 +1,29 @@
+@import "../calendar-popover/calendar-popover.css";
+
+.date-input {
+  position: relative;
+}
+
+.date-input .date-input__field {
+  padding-right: 2.5rem;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.date-input__icon {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--color-text-heading-muted);
+}
+
+.date-input__icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
