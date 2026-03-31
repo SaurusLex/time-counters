@@ -46,6 +46,8 @@
   /* Texto de títulos en modales (cabecera y bloques) — gris, no negro */
   --color-text-heading: #2a2a2a;
   --color-text-heading-muted: #404040;
+  /* Título principal de página (h1), un poco más suave que heading-muted */
+  --color-text-page-title: #505050;
 
   /*
    * Azul primario (misma familia que los botones; de más claro a más intenso).
@@ -71,7 +73,11 @@
    * Tipografía — escala de headings (rem; base del documento 16px).
    * h1: página; h2–h3: bloques; h4–h5: secciones / modales; h6: etiquetas finas.
    */
-  --font-heading-1: 1.5rem; /* 24px */
+  --font-family-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+
+  --font-heading-1: 1.875rem; /* 30px */
+  --font-heading-1-mobile: 1.5rem; /* 24px — h1 en ≤600px */
   --font-heading-2: 1.375rem; /* 22px */
   --font-heading-3: 1.25rem; /* 20px */
   --font-heading-4: 1.125rem; /* 18px */

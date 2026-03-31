@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Contadores de Tiempo</title>
+    <link rel="icon" href="assets/time-counters-icon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/time-counters-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="components/button/button.css" />
     <link rel="stylesheet" href="components/empty-state/empty-state.css" />
@@ -18,7 +26,17 @@
   </head>
   <body>
     <div class="container">
-      <h1>Contadores de Tiempo</h1>
+      <div class="app-title-row">
+        <img
+          class="app-title-icon"
+          src="assets/time-counters-icon.png"
+          alt=""
+          width="48"
+          height="48"
+          decoding="async"
+        />
+        <h1>Contadores de Tiempo</h1>
+      </div>
       <!-- El formulario original se oculta, ahora se usa el modal -->
       <form id="counter-form" style="display: none"></form>
       <div class="header-action-row">

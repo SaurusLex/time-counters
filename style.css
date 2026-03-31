@@ -2,7 +2,7 @@
 @import "components/divider/divider.css";
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-family-sans);
   font-size: var(--font-body);
   background: var(--color-bg-page);
   margin: 0;
@@ -27,7 +27,6 @@ body {
   }
   h1 {
     margin-top: 0;
-    margin-bottom: var(--space-4);
     text-align: left;
   }
   .header-action-row {
@@ -87,6 +86,25 @@ body {
     margin-left: 0;
   }
 }
+.app-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  margin-top: 0;
+  margin-bottom: var(--space-8);
+}
+.app-title-row h1 {
+  margin: 0;
+  text-align: left;
+}
+.app-title-icon {
+  flex-shrink: 0;
+  height: var(--size-btn-lg);
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
 h1 {
   font-size: var(--font-heading-1);
   font-weight: 700;
@@ -94,7 +112,15 @@ h1 {
   margin-top: 0;
   margin-bottom: var(--space-4);
   text-align: center;
-  color: #333;
+  color: var(--color-text-page-title);
+}
+@media (max-width: 600px) {
+  h1 {
+    font-size: var(--font-heading-1-mobile);
+  }
+  .app-title-icon {
+    height: var(--size-btn-md);
+  }
 }
 h2 {
   font-size: var(--font-heading-2);

@@ -16,3 +16,9 @@ fs.copyFileSync(
 fs.cpSync(path.join(root, "components"), path.join(dist, "components"), {
   recursive: true,
 });
+
+const assetsDir = path.join(root, "assets");
+if (fs.existsSync(assetsDir)) {
+  fs.cpSync(assetsDir, path.join(dist, "assets"), { recursive: true });
+}
+
