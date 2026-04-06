@@ -63,7 +63,7 @@ body {
     text-align: left;
     width: 100%;
   }
-  .counter-info > span > .counter-name {
+  .counter-info > span .counter-name {
     font-size: 1.05em;
     text-align: left;
   }
@@ -234,7 +234,34 @@ ul#counters-list li:hover {
   flex: 1;
   min-width: 0;
 }
-.counter-info > span > .counter-name,
+.counter-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25em 0.45em;
+  margin-bottom: 4px;
+}
+.counter-title-row .counter-name {
+  display: inline;
+  margin-bottom: 0;
+  margin-right: 0;
+}
+.counter-auto-delete {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: #6b7280;
+  line-height: 1;
+}
+.counter-auto-delete svg {
+  width: 1.05em;
+  height: 1.05em;
+}
+.counter-auto-delete:focus-visible {
+  outline: 2px solid var(--color-primary-400);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 .counter-info > span > .counter-date,
 .counter-info > span > .counter-time {
   display: block;
@@ -318,6 +345,26 @@ ul#counters-list li .delete-btn:hover {
   margin-bottom: var(--space-1);
   font-weight: 500;
   color: #333;
+}
+.form-label--checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-weight: 400;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+.form-label--checkbox input[type="checkbox"] {
+  margin-top: 0.2em;
+  flex-shrink: 0;
+}
+.form-hint--always {
+  display: block;
+  margin-top: var(--space-1);
+  margin-bottom: 0;
+}
+#modal-auto-delete-recurring-hint {
+  display: none;
 }
 .form-control {
   width: 100%;

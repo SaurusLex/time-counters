@@ -1,5 +1,6 @@
 // Asegura que window.createTag está disponible
 import "./components/tag/tag.component.js";
+import "./components/tooltip/tooltip.component.js";
 import "./components/button/button.component.js";
 import { showToast } from "./components/toast/toast.js";
 import "./components/pill/pill.component.js";
@@ -179,6 +180,13 @@ initCounterManager({
       placement: "top-right",
       size: "lg",
     });
+    if (isSignedIn()) {
+      try {
+        await backupToFirestore();
+      } catch (e) {}
+    }
+  },
+  onAutoPurge: async () => {
     if (isSignedIn()) {
       try {
         await backupToFirestore();
@@ -373,6 +381,8 @@ function openCounterModal(mode = "new", idx = null) {
       }
     }
     updateFrequencyDependentUI(root, freq);
+    const autoDeleteInput = root?.querySelector("#modal-counter-auto-delete");
+    if (autoDeleteInput) autoDeleteInput.checked = !!counter.autoDeleteOnReach;
     if (title) title.textContent = "Editar contador";
     editingIdx = idx;
   } else {
@@ -383,6 +393,8 @@ function openCounterModal(mode = "new", idx = null) {
     frequencyDropdown.setValue("none");
     frequencyHiddenInput.value = "none";
     if (endDateInput) endDateInput.value = "";
+    const autoDeleteInput = root?.querySelector("#modal-counter-auto-delete");
+    if (autoDeleteInput) autoDeleteInput.checked = false;
     updateFrequencyDependentUI(root, "none");
     if (title) title.textContent = "Nuevo contador";
     editingIdx = null;
@@ -512,9 +524,13 @@ function updateFrequencyDependentUI(root, frequency) {
   const dateHint = root?.querySelector("#modal-date-hint");
   const endDateGroup = root?.querySelector("#modal-end-date-group");
   const endDateInput = root?.querySelector("#modal-counter-end-date");
+  const autoDeleteRecurringHint = root?.querySelector("#modal-auto-delete-recurring-hint");
   if (dateHint) dateHint.style.display = frequency === "annual" ? "block" : "none";
   if (endDateGroup) endDateGroup.style.display = frequency !== "none" ? "block" : "none";
   if (frequency === "none" && endDateInput) endDateInput.value = "";
+  if (autoDeleteRecurringHint) {
+    autoDeleteRecurringHint.style.display = frequency !== "none" ? "block" : "none";
+  }
 }
 
 function initFrequencyDropdown() {
@@ -635,6 +651,9 @@ document
     const time = document.getElementById("modal-counter-time").value;
     const frequency = document.getElementById("modal-counter-frequency").value; // Added
     const endDateRaw = document.getElementById("modal-counter-end-date").value; // Added
+    const autoDeleteOnReach = Boolean(
+      document.getElementById("modal-counter-auto-delete")?.checked
+    );
 
     if (!name || !dateRaw.trim()) return;
 
@@ -667,6 +686,13 @@ document
       return;
     }
 
+    if (autoDeleteOnReach && frequency !== "none" && !endDateIso) {
+      alert(
+        "Para eliminar automáticamente una serie recurrente, indica la fecha de finalización."
+      );
+      return;
+    }
+
     // Combinar fecha y hora en un solo valor (si hay hora)
     let combinedDate = dateIso;
     if (time) {
@@ -680,6 +706,7 @@ document
       tags: [...modalTags],
       frequency,
       endDate: frequency !== "none" ? endDateIso : "", // Save endDate only if recurring
+      autoDeleteOnReach,
     };
 
     // Use the manager function to add or update the counter

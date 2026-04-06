@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="components/avatar/avatar.css" />
     <link rel="stylesheet" href="components/bottom-sheet/bottom-sheet.css" />
     <link rel="stylesheet" href="components/date-input/date-input.css" />
+    <link rel="stylesheet" href="components/tooltip/tooltip.css" />
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   </head>
   <body>
@@ -131,6 +132,16 @@
                 />
                 <span class="date-input__icon" aria-hidden="true"><i data-lucide="calendar"></i></span>
               </div>
+            </div>
+
+            <div class="form-group" id="modal-auto-delete-group">
+              <label class="form-label form-label--checkbox" for="modal-counter-auto-delete">
+                <input type="checkbox" id="modal-counter-auto-delete" />
+                Eliminar automáticamente al llegar a la fecha
+              </label>
+              <small id="modal-auto-delete-recurring-hint" class="form-hint form-hint--always">
+                En series recurrentes necesitas una fecha de finalización para poder autoborrar.
+              </small>
             </div>
 
             <div class="tags-section">

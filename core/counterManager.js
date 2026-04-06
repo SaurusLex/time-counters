@@ -5,6 +5,7 @@ import {
   isFirstValueSingular,
   getNextOccurrence as getNextOccurrenceFromUtils,
   advanceDateByFrequency as advanceDateByFrequencyFromUtils,
+  getCalendarDateFromStoredValue,
 } from "../utils/dateUtils.js";
 import {
   createEmptyStateListItem,
@@ -25,6 +26,7 @@ let _showDeleteConfirm = (opts) => {
   import("../components/popover/popover.js").then(({ showPopover }) => showPopover(opts));
 };
 let _onAfterDelete = () => {};
+let _onAutoPurge = () => {};
 
 function auditTimestampIso() {
   return new Date().toISOString();
@@ -64,6 +66,7 @@ export function initCounterManager(dependencies) {
   _renderCounters = renderCounters;
   if (dependencies.showDeleteConfirm) _showDeleteConfirm = dependencies.showDeleteConfirm;
   if (dependencies.onAfterDelete) _onAfterDelete = dependencies.onAfterDelete;
+  if (dependencies.onAutoPurge) _onAutoPurge = dependencies.onAutoPurge;
 }
 
 export function getCounters() {
@@ -72,6 +75,56 @@ export function getCounters() {
 
 export function saveCounters(counters) {
   localStorage.setItem("counters", JSON.stringify(counters));
+}
+
+function counterTitleRowHtml(counter) {
+  const badge = counter.autoDeleteOnReach
+    ? `<span class="counter-auto-delete" data-tooltip="Se eliminará automáticamente al llegar la fecha" data-tooltip-placement="top" tabindex="0" aria-label="Autoborrado al llegar la fecha"><i data-lucide="calendar-x" aria-hidden="true"></i></span>`
+    : "";
+  return `<span class="counter-title-row"><span class="counter-name">${counter.name}</span>${badge}</span>`;
+}
+
+function endOfLocalCalendarDay(date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
+}
+
+/** True si el contador debe eliminarse por autoborrado (opción activa y fecha cumplida). */
+export function shouldCounterAutoDelete(counter, now = new Date()) {
+  if (!counter || !counter.autoDeleteOnReach) return false;
+  const freq = counter.frequency || "none";
+  if (freq === "none") {
+    const raw = String(counter.date ?? "").trim();
+    if (!raw) return false;
+    if (raw.includes("T")) {
+      const t = new Date(raw);
+      return !isNaN(t.getTime()) && now >= t;
+    }
+    const cal = getCalendarDateFromStoredValue(raw);
+    if (!cal || isNaN(cal.getTime())) return false;
+    return now > endOfLocalCalendarDay(cal);
+  }
+  if (!counter.endDate) return false;
+  const cal = getCalendarDateFromStoredValue(counter.endDate);
+  if (!cal || isNaN(cal.getTime())) return false;
+  return now > endOfLocalCalendarDay(cal);
+}
+
+function purgeAutoDeleteCounters() {
+  const now = new Date();
+  const counters = getCounters();
+  const filtered = counters.filter((c) => !shouldCounterAutoDelete(c, now));
+  if (filtered.length === counters.length) return false;
+  saveCounters(filtered);
+  _onAutoPurge?.();
+  return true;
 }
 
 export function deleteCounter(id, occurrenceDateString) {
@@ -199,6 +252,7 @@ export function addOrUpdateCounter(counterData, editIndex) {
         ? counters[editIndex].history
         : [],
     endDate: frequency !== "none" ? endDate : undefined, // <-- Asegúrate de guardar endDate
+    autoDeleteOnReach: Boolean(counterData.autoDeleteOnReach),
   };
 
   if (editIndex !== null) {
@@ -225,6 +279,9 @@ export function addOrUpdateCounter(counterData, editIndex) {
 }
 
 export function renderCounters() {
+  if (purgeAutoDeleteCounters()) {
+    return renderCounters();
+  }
   const list = _getDomListElement();
   if (!list) {
     console.error(
@@ -444,7 +501,7 @@ export function renderCounters() {
         li.innerHTML = `
                   <span class=\"counter-info\">
                     <span>
-                      <span class=\"counter-name\">${counter.name}</span>
+                      ${counterTitleRowHtml(counter)}
                       <span class=\"counter-date\">(${fechaStr})</span>
                       <span class=\"counter-time\" id=\"counter-time-${originalIdx}-0\">${text}</span>
                       ${tagsHtml}
@@ -584,7 +641,7 @@ export function renderCounters() {
         li.innerHTML = `
                   <span class=\"counter-info\">
                     <span>
-                      <span class=\"counter-name\">${counter.name}</span>
+                      ${counterTitleRowHtml(counter)}
                       <span class=\"counter-date\">(${fechaStr})</span>
                       <span class=\"counter-time\" id=\"counter-time-${originalIdx}-${occurrenceIdxForId}\">${text}</span>
                       ${tagsHtml}
@@ -669,7 +726,7 @@ export function renderCounters() {
       li.innerHTML = `
               <span class=\"counter-info\">
                 <span>
-                  <span class=\"counter-name\">${counter.name}</span>
+                  ${counterTitleRowHtml(counter)}
                   <span class=\"counter-date\">(${fechaStr})</span>
                   <span class=\"counter-time\" id=\"counter-time-${originalIdx}\">${text}</span> 
                   ${tagsHtml}
@@ -680,10 +737,20 @@ export function renderCounters() {
       list.appendChild(li);
     }
   });
+  if (typeof lucide !== "undefined" && typeof lucide.createIcons === "function") {
+    lucide.createIcons({ root: list });
+  }
+  if (typeof window.initTooltipsIn === "function") {
+    window.initTooltipsIn(list);
+  }
   _renderFilterTags();
 }
 
 export function updateCountersTime() {
+  if (purgeAutoDeleteCounters()) {
+    renderCounters();
+    return;
+  }
   const counters = getCounters();
   const now = new Date();
   const config = _getConfig();
