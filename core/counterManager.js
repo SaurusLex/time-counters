@@ -16,6 +16,7 @@ let _getConfig = () => ({});
 let _getFilterTags = () => [];
 let _getSortOrder = () => "recent";
 let _getTimeFilter = () => "all";
+let _getQuickDateRangeFilter = () => ({ mode: "none" });
 let _getSearchQuery = () => "";
 let _openCounterModal = () => {};
 let _renderFilterTags = () => {};
@@ -27,6 +28,44 @@ let _showDeleteConfirm = (opts) => {
 };
 let _onAfterDelete = () => {};
 let _onAutoPurge = () => {};
+let _onAfterRenderCounters = () => {};
+
+function normalizeQuickRange(raw) {
+  if (!raw || typeof raw !== "object") return { mode: "none" };
+  const mode = raw.mode;
+  if (mode === "week" || mode === "month") return { mode };
+  if (mode === "custom") {
+    const startDate = String(raw.startDate || "").trim();
+    const endDate = String(raw.endDate || "").trim();
+    if (startDate && endDate) return { mode: "custom", startDate, endDate };
+  }
+  return { mode: "none" };
+}
+
+function getWeekRange(today) {
+  const start = new Date(today);
+  const day = start.getDay(); // 0 domingo, 1 lunes, ...
+  const diffFromMonday = day === 0 ? 6 : day - 1;
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - diffFromMonday);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+function getMonthRange(today) {
+  const start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
+function isCounterInRange(counter, start, end) {
+  const eventDate = new Date(counter.date);
+  if (isNaN(eventDate.getTime())) return false;
+  return eventDate >= start && eventDate <= end;
+}
 
 function auditTimestampIso() {
   return new Date().toISOString();
@@ -58,6 +97,8 @@ export function initCounterManager(dependencies) {
   _getFilterTags = dependencies.getFilterTags;
   _getSortOrder = dependencies.getSortOrder || _getSortOrder;
   _getTimeFilter = dependencies.getTimeFilter || _getTimeFilter;
+  _getQuickDateRangeFilter =
+    dependencies.getQuickDateRangeFilter || _getQuickDateRangeFilter;
   _getSearchQuery = dependencies.getSearchQuery || _getSearchQuery;
   _openCounterModal = dependencies.openCounterModal;
   _renderFilterTags = dependencies.renderFilterTags;
@@ -67,6 +108,9 @@ export function initCounterManager(dependencies) {
   if (dependencies.showDeleteConfirm) _showDeleteConfirm = dependencies.showDeleteConfirm;
   if (dependencies.onAfterDelete) _onAfterDelete = dependencies.onAfterDelete;
   if (dependencies.onAutoPurge) _onAutoPurge = dependencies.onAutoPurge;
+  if (dependencies.onAfterRenderCounters) {
+    _onAfterRenderCounters = dependencies.onAfterRenderCounters;
+  }
 }
 
 export function getCounters() {
@@ -312,6 +356,25 @@ export function renderCounters() {
     });
   }
 
+  const quick = normalizeQuickRange(_getQuickDateRangeFilter());
+  if (quick.mode !== "none") {
+    if (quick.mode === "week") {
+      const { start, end } = getWeekRange(now);
+      filtered = filtered.filter((c) => isCounterInRange(c, start, end));
+    } else if (quick.mode === "month") {
+      const { start, end } = getMonthRange(now);
+      filtered = filtered.filter((c) => isCounterInRange(c, start, end));
+    } else if (quick.mode === "custom") {
+      const start = new Date(`${quick.startDate}T00:00:00`);
+      const end = new Date(`${quick.endDate}T23:59:59.999`);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        filtered = [];
+      } else {
+        filtered = filtered.filter((c) => isCounterInRange(c, start, end));
+      }
+    }
+  }
+
   const searchQ = (_getSearchQuery() || "").trim().toLowerCase();
   if (searchQ) {
     filtered = filtered.filter((c) => {
@@ -361,6 +424,7 @@ export function renderCounters() {
     list.appendChild(li);
     refreshEmptyStateIcons(li);
     _renderFilterTags();
+    _onAfterRenderCounters();
     return;
   }
 
@@ -744,6 +808,7 @@ export function renderCounters() {
     window.initTooltipsIn(list);
   }
   _renderFilterTags();
+  _onAfterRenderCounters();
 }
 
 export function updateCountersTime() {

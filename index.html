@@ -44,20 +44,33 @@
         <div class="btn-group add-group" id="add-button-container"></div>
         <div id="auth-status-indicator"></div>
       </div>
-      <div class="counters-toolbar">
-        <div class="counters-search-wrap">
-          <input
-            type="search"
-            id="counters-search-input"
-            class="form-control counters-search-input"
-            placeholder="Buscar…"
-            autocomplete="off"
-            aria-label="Buscar contadores"
-          />
+      <div id="counters-filters-bar" class="counters-filters-bar">
+        <div class="counters-toolbar">
+          <div class="counters-search-wrap">
+            <input
+              type="search"
+              id="counters-search-input"
+              class="form-control counters-search-input"
+              placeholder="Buscar…"
+              autocomplete="off"
+              aria-label="Buscar contadores"
+            />
+          </div>
+          <div id="filters-mobile-toolbar" class="filters-mobile-only"></div>
+          <div id="sort-dropdown-container" class="filters-desktop-only"></div>
+          <div id="time-filter-dropdown-container" class="filters-desktop-only"></div>
         </div>
-        <div id="filters-mobile-toolbar" class="filters-mobile-only"></div>
-        <div id="sort-dropdown-container" class="filters-desktop-only"></div>
-        <div id="time-filter-dropdown-container" class="filters-desktop-only"></div>
+        <div class="time-quick-filters-row">
+          <label id="time-quick-filters-label" class="time-quick-filters-label"
+            >Periodo:</label
+          >
+          <div
+            id="time-quick-filters"
+            class="time-quick-filters"
+            role="group"
+            aria-labelledby="time-quick-filters-label"
+          ></div>
+        </div>
       </div>
       <div class="filter-tags-section">
         <label>Filtrar por etiquetas:</label>

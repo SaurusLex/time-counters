@@ -87,7 +87,68 @@ function saveSortOrder(value) {
 
 function getTimeFilter() {
   const saved = localStorage.getItem("countersTimeFilter");
-  return saved === "past" || saved === "future" ? saved : "all";
+  if (saved === "past" || saved === "future") return saved;
+  return "all";
+}
+
+const QUICK_DATE_RANGE_KEY = "countersQuickDateRange";
+const LEGACY_TIME_FILTER_STATE_KEY = "countersTimeFilterState";
+
+function getQuickDateRangeFilter() {
+  const raw = localStorage.getItem(QUICK_DATE_RANGE_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        const mode = parsed.mode;
+        if (mode === "week" || mode === "month") return { mode };
+        if (mode === "custom") {
+          const startDate = String(parsed.startDate || "").trim();
+          const endDate = String(parsed.endDate || "").trim();
+          if (startDate && endDate) return { mode: "custom", startDate, endDate };
+        }
+      }
+    } catch (err) {}
+  }
+
+  const legacy = localStorage.getItem(LEGACY_TIME_FILTER_STATE_KEY);
+  if (legacy) {
+    try {
+      const parsed = JSON.parse(legacy);
+      if (parsed && typeof parsed === "object") {
+        const m = parsed.mode;
+        if (m === "week" || m === "month") {
+          const next = { mode: m };
+          saveQuickDateRangeFilter(next);
+          localStorage.removeItem(LEGACY_TIME_FILTER_STATE_KEY);
+          return next;
+        }
+        if (m === "custom") {
+          const startDate = String(parsed.startDate || "").trim();
+          const endDate = String(parsed.endDate || "").trim();
+          if (startDate && endDate) {
+            const next = { mode: "custom", startDate, endDate };
+            saveQuickDateRangeFilter(next);
+            localStorage.removeItem(LEGACY_TIME_FILTER_STATE_KEY);
+            return next;
+          }
+        }
+      }
+    } catch (err) {}
+    localStorage.removeItem(LEGACY_TIME_FILTER_STATE_KEY);
+  }
+
+  return { mode: "none" };
+}
+
+function saveQuickDateRangeFilter(value) {
+  const safe = value && typeof value === "object" ? value : { mode: "none" };
+  const mode = safe.mode || "none";
+  if (mode === "none") {
+    localStorage.removeItem(QUICK_DATE_RANGE_KEY);
+  } else {
+    localStorage.setItem(QUICK_DATE_RANGE_KEY, JSON.stringify(safe));
+  }
 }
 
 function getSearchQuery() {
@@ -96,7 +157,11 @@ function getSearchQuery() {
 }
 
 function saveTimeFilter(value) {
-  localStorage.setItem("countersTimeFilter", value);
+  if (value === "past" || value === "future") {
+    localStorage.setItem("countersTimeFilter", value);
+  } else {
+    localStorage.setItem("countersTimeFilter", "all");
+  }
 }
 
 function getDomListElement() {
@@ -161,11 +226,102 @@ function showDeleteConfirm({ message, actions, anchorElement, counterName }) {
 }
 
 // Inicializar el CounterManager con las dependencias necesarias
+function refreshQuickFilterChips() {
+  const container = document.getElementById("time-quick-filters");
+  if (!container || typeof window.createTag !== "function") return;
+  container.innerHTML = "";
+  const quick = getQuickDateRangeFilter();
+
+  function applyQuick(mode) {
+    if (mode === "week" || mode === "month") {
+      if (quick.mode === mode) {
+        saveQuickDateRangeFilter({ mode: "none" });
+      } else {
+        saveQuickDateRangeFilter({ mode });
+      }
+      renderCounters();
+      return;
+    }
+    if (mode === "custom") {
+      if (quick.mode === "custom") {
+        saveQuickDateRangeFilter({ mode: "none" });
+        renderCounters();
+        return;
+      }
+      askForCustomDateRange().then((range) => {
+        if (!range) return;
+        saveQuickDateRangeFilter(range);
+        renderCounters();
+      });
+    }
+  }
+
+  const weekChip = window.createTag({
+    text: "Esta semana",
+    size: "sm",
+    removable: false,
+    selectable: true,
+    selected: quick.mode === "week",
+    onSelect: () => applyQuick("week"),
+  });
+  weekChip.classList.add("time-quick-filter-chip", "filter-tag-btn");
+
+  const monthChip = window.createTag({
+    text: "Este mes",
+    size: "sm",
+    removable: false,
+    selectable: true,
+    selected: quick.mode === "month",
+    onSelect: () => applyQuick("month"),
+  });
+  monthChip.classList.add("time-quick-filter-chip", "filter-tag-btn");
+
+  const dfChip = getModalDateFormatKey();
+  let customLabel = "Fechas…";
+  let customTitle = "Elegir rango de fechas";
+  if (quick.mode === "custom" && quick.startDate && quick.endDate) {
+    const startCal = getCalendarDateFromStoredValue(quick.startDate);
+    const endCal = getCalendarDateFromStoredValue(quick.endDate);
+    if (
+      startCal &&
+      endCal &&
+      !isNaN(startCal.getTime()) &&
+      !isNaN(endCal.getTime())
+    ) {
+      const a = formatDateDisplay(startCal, dfChip);
+      const b = formatDateDisplay(endCal, dfChip);
+      customLabel = `${a} – ${b}`;
+      customTitle = `Periodo personalizado: ${a} → ${b}`;
+    } else {
+      customLabel = "Fechas";
+    }
+  }
+  const customChip = window.createTag({
+    text: customLabel,
+    size: "sm",
+    removable: false,
+    selectable: true,
+    selected: quick.mode === "custom",
+    onSelect: () => applyQuick("custom"),
+  });
+  customChip.classList.add("time-quick-filter-chip", "filter-tag-btn");
+  if (quick.mode === "custom" && quick.startDate && quick.endDate) {
+    customChip.classList.add("time-quick-filter-chip--range");
+  }
+  customChip.setAttribute("title", customTitle);
+
+  container.appendChild(weekChip);
+  container.appendChild(monthChip);
+  container.appendChild(customChip);
+  if (typeof lucide !== "undefined") lucide.createIcons({ root: container });
+}
+
 initCounterManager({
   getConfig,
   getFilterTags,
   getSortOrder,
   getTimeFilter,
+  getQuickDateRangeFilter,
   getSearchQuery,
   openCounterModal,
   renderFilterTags,
@@ -173,6 +329,7 @@ initCounterManager({
   getCounterTimeElement,
   deleteCounter: deleteCounterFromManager,
   showDeleteConfirm,
+  onAfterRenderCounters: refreshQuickFilterChips,
   onAfterDelete: async (ctx = {}) => {
     const deletedOccurrence = ctx.kind === "occurrence";
     showToast(deletedOccurrence ? "Evento eliminado" : "Contador eliminado", {
@@ -563,6 +720,146 @@ const TIME_FILTER_OPTIONS = [
   { value: "future", label: "Contadores futuros" },
 ];
 
+/**
+ * Rango de fechas: Modal en escritorio, BottomSheet en móvil (mismo criterio que config / contador).
+ * @returns {Promise<{ mode: 'custom', startDate: string, endDate: string } | null>}
+ */
+function askForCustomDateRange() {
+  return new Promise((resolve) => {
+    let settled = false;
+    function finish(value) {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    }
+
+    const df = getModalDateFormatKey();
+    const placeholder = getDateFormatPlaceholder(df);
+    const current = getQuickDateRangeFilter();
+
+    function isoToDisplay(iso) {
+      if (!iso) return "";
+      const cal = getCalendarDateFromStoredValue(iso);
+      return cal && !isNaN(cal.getTime()) ? formatDateDisplay(cal, df) : "";
+    }
+
+    const inner = document.createElement("div");
+    inner.className = "range-date-modal-inner";
+    inner.innerHTML = `
+      <div class="form-group">
+        <label class="form-label" for="range-date-start">Fecha de inicio</label>
+        <div class="date-input modal-date-field-wrap">
+          <input type="text" id="range-date-start" class="form-control date-input__field" autocomplete="off" inputmode="numeric" />
+          <span class="date-input__icon" aria-hidden="true"><i data-lucide="calendar"></i></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="range-date-end">Fecha de fin</label>
+        <div class="date-input modal-date-field-wrap">
+          <input type="text" id="range-date-end" class="form-control date-input__field" autocomplete="off" inputmode="numeric" />
+          <span class="date-input__icon" aria-hidden="true"><i data-lucide="calendar"></i></span>
+        </div>
+      </div>
+    `;
+
+    const footer = `
+      <button type="button" class="btn-secondary" id="range-date-cancel">Cancelar</button>
+      <button type="button" class="btn-primary" id="range-date-apply">Aplicar</button>
+    `;
+
+    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+    let view;
+    if (isMobile) {
+      const bodyWrap = document.createElement("div");
+      bodyWrap.className = "modal-body";
+      bodyWrap.appendChild(inner);
+      view = new BottomSheet({
+        header: '<span class="modal-title">Rango de fechas</span>',
+        body: bodyWrap,
+        footer,
+        closable: true,
+        onClose: () => {
+          finish(null);
+          view.destroy();
+        },
+      });
+    } else {
+      view = new Modal({
+        header: '<span class="modal-title">Rango de fechas</span>',
+        body: inner,
+        footer,
+        closable: true,
+        onClose: () => {
+          finish(null);
+          view.destroy();
+        },
+      });
+    }
+
+    view.open();
+
+    const root = isMobile ? view.sheet : view.modal;
+    initDateInputsIn(root, { getFormatKey: getModalDateFormatKey });
+
+    const startInput = root.querySelector("#range-date-start");
+    const endInput = root.querySelector("#range-date-end");
+    if (startInput) {
+      startInput.placeholder = placeholder;
+      startInput.title = placeholder;
+      startInput.value =
+        current.mode === "custom"
+          ? isoToDisplay(current.startDate)
+          : formatDateDisplay(new Date(), df);
+    }
+    if (endInput) {
+      endInput.placeholder = placeholder;
+      endInput.title = placeholder;
+      endInput.value = current.mode === "custom" ? isoToDisplay(current.endDate) : "";
+    }
+
+    if (typeof lucide !== "undefined") lucide.createIcons({ root: inner });
+
+    const cancelBtn = root.querySelector("#range-date-cancel");
+    const applyBtn = root.querySelector("#range-date-apply");
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        closeActiveCalendarPopover();
+        view.close();
+      };
+    }
+    if (applyBtn) {
+      applyBtn.onclick = () => {
+        const startRaw = (startInput?.value || "").trim();
+        const endRaw = (endInput?.value || "").trim();
+        const startParsed = parseDateInput(startRaw, df);
+        if (!startParsed) {
+          alert(`Fecha de inicio no válida. Usa el formato ${placeholder}.`);
+          return;
+        }
+        const endParsed = parseDateInput(endRaw, df);
+        if (!endParsed) {
+          alert(`Fecha de fin no válida. Usa el formato ${placeholder}.`);
+          return;
+        }
+        if (endParsed < startParsed) {
+          alert("La fecha de fin no puede ser anterior a la fecha de inicio.");
+          return;
+        }
+        closeActiveCalendarPopover();
+        finish({
+          mode: "custom",
+          startDate: dateToIsoYMD(startParsed),
+          endDate: dateToIsoYMD(endParsed),
+        });
+        view.close();
+      };
+    }
+
+    setTimeout(() => startInput?.focus(), 100);
+  });
+}
+
 function initSortDropdown() {
   const container = document.getElementById("sort-dropdown-container");
   if (!container || typeof createDropdown !== "function") return;
@@ -596,6 +893,7 @@ function initTimeFilterDropdown() {
       renderCounters();
     },
   });
+  container.innerHTML = "";
   container.appendChild(dropdown);
 }
 
@@ -621,6 +919,7 @@ function initFiltersMobileButton() {
         onTimeChange: (value) => {
           saveTimeFilter(value);
           renderCounters();
+          initTimeFilterDropdown();
         },
       });
     },
@@ -731,9 +1030,9 @@ document.getElementById("counters-list").onclick = function (e) {
 };
 
 function renderFilterTags() {
-  const toolbar = document.querySelector(".counters-toolbar");
-  if (toolbar) {
-    toolbar.style.display = getCounters().length === 0 ? "none" : "";
+  const filtersBar = document.getElementById("counters-filters-bar");
+  if (filtersBar) {
+    filtersBar.style.display = getCounters().length === 0 ? "none" : "";
   }
   const filterTagsList = document.getElementById("filter-tags-list");
   const filterSection = document.querySelector(".filter-tags-section");

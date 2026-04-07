@@ -35,10 +35,12 @@ body {
   .btn-group {
     margin-right: 0;
   }
-  .filter-tags-section {
+  .filter-tags-section,
+  .time-quick-filters-row {
     text-align: left;
   }
-  .filter-tags-section label {
+  .filter-tags-section label,
+  .time-quick-filters-label {
     font-size: 0.95em;
     text-align: left;
   }
@@ -534,7 +536,8 @@ select.form-control {
   gap: 10px;
   margin-bottom: 12px;
 }
-.filter-tags-section label {
+.filter-tags-section label,
+.time-quick-filters-label {
   font-weight: 500;
   color: #212121;
 }
@@ -545,12 +548,51 @@ select.form-control {
   align-items: center;
 }
 
+.counters-filters-bar {
+  margin-bottom: 12px;
+}
+
 .counters-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   flex-wrap: wrap;
+  align-content: flex-start;
+}
+
+/* Misma disposición que .filter-tags-section: etiqueta arriba, chips debajo */
+.time-quick-filters-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.time-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+/* Chip con rango personalizado: fechas visibles; elipsis si no cabe */
+.time-quick-filter-chip--range.tag {
+  max-width: min(100%, 16rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* Chips de periodo: misma fila si caben; el resto baja a segunda fila */
+@media (max-width: 600px) {
+  .time-quick-filters {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
 }
 
 .counters-search-wrap {
@@ -572,7 +614,7 @@ select.form-control {
 @media (max-width: 600px) {
   .counters-toolbar {
     gap: 8px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: stretch;
   }
   .counters-search-wrap {
@@ -611,7 +653,9 @@ select.form-control {
 
 .counters-toolbar #sort-dropdown-container,
 .counters-toolbar #time-filter-dropdown-container {
+  flex: 0 1 220px;
   max-width: 220px;
+  min-width: 0;
 }
 
 .counters-toolbar #filters-mobile-toolbar {
@@ -1118,4 +1162,32 @@ select.form-control {
   display: flex !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
+}
+
+/* Modal rango de fechas (filtro rápido): dos columnas en desktop, una en móvil */
+.range-date-modal-inner {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.range-date-modal-inner .form-group {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .range-date-modal-inner {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .range-date-modal-inner .form-group {
+    flex: 1 1 auto;
+  }
 }
