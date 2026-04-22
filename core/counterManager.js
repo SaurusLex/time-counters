@@ -188,6 +188,124 @@ function counterTitleRowHtml(counter) {
   return `<span class="counter-title-row"><span class="counter-name">${counter.name}</span>${badge}</span>`;
 }
 
+/**
+ * Construye un `<li>` de contador para `#counters-list` (misma estructura que antes del refactor).
+ * @param {object} opts
+ * @param {object} opts.counter
+ * @param {number} opts.originalIdx
+ * @param {string} opts.fechaStr
+ * @param {string} opts.text
+ * @param {number|null} opts.timeIdSuffix `null` → id `counter-time-{idx}`; número `n` → `counter-time-{idx}-{n}`
+ * @param {string|null} [opts.occurrenceDateIso] si hay valor, se pone `data-occurrence-date` en el `<li>`
+ * @param {string} opts.editText
+ * @param {string} opts.deleteText
+ * @param {boolean} opts.isRecurring flujo de confirmación al eliminar (serie vs contador simple)
+ * @returns {HTMLLIElement}
+ */
+function createCounterCard(opts) {
+  const {
+    counter,
+    originalIdx,
+    fechaStr,
+    text,
+    timeIdSuffix,
+    occurrenceDateIso,
+    editText,
+    deleteText,
+    isRecurring,
+  } = opts;
+
+  const li = document.createElement("li");
+  li.setAttribute("data-original-counter-idx", originalIdx.toString());
+  if (occurrenceDateIso) {
+    li.setAttribute("data-occurrence-date", occurrenceDateIso);
+  }
+
+  let tagsHtml = "";
+  if (counter.tags && counter.tags.length) {
+    const tagsSpan = document.createElement("span");
+    tagsSpan.className = "counter-tags";
+    counter.tags.forEach((tag) => {
+      const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
+      tagsSpan.appendChild(tagEl);
+    });
+    tagsHtml = tagsSpan.outerHTML;
+  }
+
+  const actions = document.createElement("span");
+  actions.className = "counter-actions";
+  actions.appendChild(
+    window.createButton({
+      text: editText,
+      color: "secondary",
+      type: "button",
+      "data-idx": originalIdx.toString(),
+      className: "edit-btn",
+      onClick: () => _openCounterModal("edit", originalIdx),
+    })
+  );
+  actions.appendChild(
+    window.createButton({
+      text: deleteText,
+      color: "danger",
+      type: "button",
+      "data-idx": originalIdx.toString(),
+      className: "delete-btn",
+      onClick: (e) => {
+        if (isRecurring) {
+          const row = e.target.closest("li");
+          const occurrenceDate = row ? row.getAttribute("data-occurrence-date") : null;
+          _showDeleteConfirm({
+            message: "¿Qué deseas borrar?",
+            actions: [
+              {
+                text: "Solo este evento",
+                className: "btn-danger",
+                onClick: () => {
+                  if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
+                  else deleteCounter(counter.id, null);
+                },
+              },
+              { text: "Toda la serie", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+              { text: "Cancelar", className: "btn-secondary" },
+            ],
+            anchorElement: e.target,
+            counterName: counter.name,
+          });
+        } else {
+          _showDeleteConfirm({
+            message: "¿Estás seguro de eliminar este contador?",
+            actions: [
+              { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
+              { text: "Cancelar", className: "btn-secondary" },
+            ],
+            anchorElement: e.target,
+            counterName: counter.name,
+          });
+        }
+      },
+    })
+  );
+
+  const timeSpanId =
+    timeIdSuffix === null || timeIdSuffix === undefined
+      ? `counter-time-${originalIdx}`
+      : `counter-time-${originalIdx}-${timeIdSuffix}`;
+
+  li.innerHTML = `
+                  <span class="counter-info">
+                    <span>
+                      ${counterTitleRowHtml(counter)}
+                      <span class="counter-date">(${fechaStr})</span>
+                      <span class="counter-time" id="${timeSpanId}">${text}</span>
+                      ${tagsHtml}
+                    </span>
+                  </span>
+                `;
+  li.appendChild(actions);
+  return li;
+}
+
 function endOfLocalCalendarDay(date) {
   return new Date(
     date.getFullYear(),
@@ -542,85 +660,20 @@ export function renderCounters() {
           includeTime: !!(counter.date && counter.date.includes("T")),
         });
         fechaStr += frequencyDisplaySuffix;
-        const li = document.createElement("li");
         // NO poner data-occurrence-date en la cabecera
-        li.setAttribute("data-original-counter-idx", originalIdx.toString());
-        let tagsHtml = "";
-        if (counter.tags && counter.tags.length) {
-          const tagsSpan = document.createElement("span");
-          tagsSpan.className = "counter-tags";
-          counter.tags.forEach((tag) => {
-            const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
-            tagsSpan.appendChild(tagEl);
-          });
-          tagsHtml = tagsSpan.outerHTML;
-        }
-        const actions = document.createElement("span");
-        actions.className = "counter-actions";
-        actions.appendChild(
-          window.createButton({
-            text: editText,
-            color: "secondary",
-            type: "button",
-            "data-idx": originalIdx.toString(),
-            className: "edit-btn",
-            onClick: () => _openCounterModal("edit", originalIdx),
+        list.appendChild(
+          createCounterCard({
+            counter,
+            originalIdx,
+            fechaStr,
+            text,
+            timeIdSuffix: occurrenceIdxForId,
+            occurrenceDateIso: null,
+            editText,
+            deleteText,
+            isRecurring: true,
           })
         );
-        actions.appendChild(
-          window.createButton({
-            text: deleteText,
-            color: "danger",
-            type: "button",
-            "data-idx": originalIdx.toString(),
-            className: "delete-btn",
-            onClick: (e) => {
-              if (isRecurring) {
-                const li = e.target.closest("li");
-                const occurrenceDate = li ? li.getAttribute("data-occurrence-date") : null;
-                _showDeleteConfirm({
-                  message: "¿Qué deseas borrar?",
-                  actions: [
-                    {
-                      text: "Solo este evento",
-                      className: "btn-danger",
-                      onClick: () => {
-                        if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
-                        else deleteCounter(counter.id, null);
-                      },
-                    },
-                    { text: "Toda la serie", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-                    { text: "Cancelar", className: "btn-secondary" },
-                  ],
-                  anchorElement: e.target,
-                  counterName: counter.name,
-                });
-              } else {
-                _showDeleteConfirm({
-                  message: "¿Estás seguro de eliminar este contador?",
-                  actions: [
-                    { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-                    { text: "Cancelar", className: "btn-secondary" },
-                  ],
-                  anchorElement: e.target,
-                  counterName: counter.name,
-                });
-              }
-            },
-          })
-        );
-        li.innerHTML = `
-                  <span class=\"counter-info\">
-                    <span>
-                      ${counterTitleRowHtml(counter)}
-                      <span class=\"counter-date\">(${fechaStr})</span>
-                      <span class=\"counter-time\" id=\"counter-time-${originalIdx}-0\">${text}</span>
-                      ${tagsHtml}
-                    </span>
-                  </span>
-                `;
-        li.appendChild(actions);
-        list.appendChild(li);
         repetitionsRendered++;
         occurrenceIdxForId++;
         // Avanzar a la siguiente ocurrencia
@@ -661,88 +714,19 @@ export function renderCounters() {
           includeTime: !!(counter.date && counter.date.includes("T")),
         });
         fechaStr += frequencyDisplaySuffix;
-        const li = document.createElement("li");
-        li.setAttribute(
-          "data-occurrence-date",
-          currentOccurrenceDate.toISOString()
-        );
-        li.setAttribute("data-original-counter-idx", originalIdx.toString());
-        let tagsHtml = "";
-        if (counter.tags && counter.tags.length) {
-          const tagsSpan = document.createElement("span");
-          tagsSpan.className = "counter-tags";
-          counter.tags.forEach((tag) => {
-            const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
-            tagsSpan.appendChild(tagEl);
-          });
-          tagsHtml = tagsSpan.outerHTML;
-        }
-        const actions = document.createElement("span");
-        actions.className = "counter-actions";
-        actions.appendChild(
-          window.createButton({
-            text: editText,
-            color: "secondary",
-            type: "button",
-            "data-idx": originalIdx.toString(),
-            className: "edit-btn",
-            onClick: () => _openCounterModal("edit", originalIdx),
+        list.appendChild(
+          createCounterCard({
+            counter,
+            originalIdx,
+            fechaStr,
+            text,
+            timeIdSuffix: occurrenceIdxForId,
+            occurrenceDateIso: currentOccurrenceDate.toISOString(),
+            editText,
+            deleteText,
+            isRecurring: true,
           })
         );
-        actions.appendChild(
-          window.createButton({
-            text: deleteText,
-            color: "danger",
-            type: "button",
-            "data-idx": originalIdx.toString(),
-            className: "delete-btn",
-            onClick: (e) => {
-              if (isRecurring) {
-                const li = e.target.closest("li");
-                const occurrenceDate = li ? li.getAttribute("data-occurrence-date") : null;
-                _showDeleteConfirm({
-                  message: "¿Qué deseas borrar?",
-                  actions: [
-                    {
-                      text: "Solo este evento",
-                      className: "btn-danger",
-                      onClick: () => {
-                        if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
-                        else deleteCounter(counter.id, null);
-                      },
-                    },
-                    { text: "Toda la serie", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-                    { text: "Cancelar", className: "btn-secondary" },
-                  ],
-                  anchorElement: e.target,
-                  counterName: counter.name,
-                });
-              } else {
-                _showDeleteConfirm({
-                  message: "¿Estás seguro de eliminar este contador?",
-                  actions: [
-                    { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-                    { text: "Cancelar", className: "btn-secondary" },
-                  ],
-                  anchorElement: e.target,
-                  counterName: counter.name,
-                });
-              }
-            },
-          })
-        );
-        li.innerHTML = `
-                  <span class=\"counter-info\">
-                    <span>
-                      ${counterTitleRowHtml(counter)}
-                      <span class=\"counter-date\">(${fechaStr})</span>
-                      <span class=\"counter-time\" id=\"counter-time-${originalIdx}-${occurrenceIdxForId}\">${text}</span>
-                      ${tagsHtml}
-                    </span>
-                  </span>
-                `;
-        li.appendChild(actions);
-        list.appendChild(li);
         repetitionsRendered++;
         occurrenceIdxForId++;
         if (repetitionsRendered >= MAX_REPETITIONS_TO_RENDER) break;
@@ -766,64 +750,19 @@ export function renderCounters() {
       let fechaStr = formatDateDisplay(target, config.dateFormat || "dd/MM/yyyy", {
         includeTime: !!(counter.date && counter.date.includes("T")),
       });
-      const li = document.createElement("li");
-      li.setAttribute("data-original-counter-idx", originalIdx.toString());
-
-      let tagsHtml = "";
-      if (counter.tags && counter.tags.length) {
-        const tagsSpan = document.createElement("span");
-        tagsSpan.className = "counter-tags";
-        counter.tags.forEach((tag) => {
-          const tagEl = window.createTag({ text: tag, removable: false, size: "xs" });
-          tagsSpan.appendChild(tagEl);
-        });
-        tagsHtml = tagsSpan.outerHTML;
-      }
-      const actions = document.createElement("span");
-      actions.className = "counter-actions";
-      actions.appendChild(
-        window.createButton({
-          text: editText,
-          color: "secondary",
-          type: "button",
-          "data-idx": originalIdx.toString(),
-          className: "edit-btn",
-          onClick: () => _openCounterModal("edit", originalIdx),
+      list.appendChild(
+        createCounterCard({
+          counter,
+          originalIdx,
+          fechaStr,
+          text,
+          timeIdSuffix: null,
+          occurrenceDateIso: null,
+          editText,
+          deleteText,
+          isRecurring: false,
         })
       );
-      actions.appendChild(
-        window.createButton({
-          text: deleteText,
-          color: "danger",
-          type: "button",
-          "data-idx": originalIdx.toString(),
-          className: "delete-btn",
-          onClick: (e) => {
-            _showDeleteConfirm({
-              message: "¿Estás seguro de eliminar este contador?",
-              actions: [
-                { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-                { text: "Cancelar", className: "btn-secondary" },
-              ],
-              anchorElement: e.target,
-              counterName: counter.name,
-            });
-          },
-        })
-      );
-
-      li.innerHTML = `
-              <span class=\"counter-info\">
-                <span>
-                  ${counterTitleRowHtml(counter)}
-                  <span class=\"counter-date\">(${fechaStr})</span>
-                  <span class=\"counter-time\" id=\"counter-time-${originalIdx}\">${text}</span> 
-                  ${tagsHtml}
-                </span>
-              </span>
-            `;
-      li.appendChild(actions);
-      list.appendChild(li);
     }
   });
   if (typeof lucide !== "undefined" && typeof lucide.createIcons === "function") {
