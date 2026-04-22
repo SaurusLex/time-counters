@@ -110,6 +110,17 @@ export function formatDateDisplay(date, formatKey = "dd/MM/yyyy", opts = {}) {
   return dateStr;
 }
 
+function startOfLocalCalendarDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Días de calendario local entre `reference` y `target` (puede ser negativo). */
+export function calendarDaysOffset(reference, target) {
+  const a = startOfLocalCalendarDay(reference).getTime();
+  const b = startOfLocalCalendarDay(target).getTime();
+  return Math.round((b - a) / MS_PER_DAY);
+}
+
 function isValidCalendarDay(year, month, day) {
   if (month < 1 || month > 12 || day < 1) return false;
   const d = new Date(year, month - 1, day);

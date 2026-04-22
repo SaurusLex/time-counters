@@ -2,6 +2,7 @@ import {
   dateDiff,
   formatDiff,
   formatDateDisplay,
+  calendarDaysOffset,
   isFirstValueSingular,
   getNextOccurrence as getNextOccurrenceFromUtils,
   advanceDateByFrequency as advanceDateByFrequencyFromUtils,
@@ -11,6 +12,42 @@ import {
   createEmptyStateListItem,
   refreshEmptyStateIcons,
 } from "../components/empty-state/empty-state.component.js";
+
+const _FREQUENCY_LIST_SUFFIX = {
+  daily: " (Diario)",
+  weekly: " (Semanal)",
+  monthly: " (Mensual)",
+  annual: " (Anual)",
+};
+
+/** Texto relativo bajo el contador: "Mañana" / "Pasado mañana" o Queda(n) … */
+function upcomingCountdownLabel(now, target, diffConfig) {
+  if (target.getTime() <= now.getTime()) return null;
+  const off = calendarDaysOffset(now, target);
+  if (off === 1) return "Mañana";
+  if (off === 2) return "Pasado mañana";
+  const diff = dateDiff(now, target);
+  const diffText = formatDiff(diff, diffConfig, { from: now, to: target });
+  return isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
+}
+
+/**
+ * Texto relativo si el evento ya pasó: "Ayer" / "Antes de ayer" (días de calendario),
+ * o el mismo estilo que antes (Pasó hace… / Ha pasado…).
+ * @param {"paso-hace"|"ha-pasado"} phrasing
+ */
+function pastRelativeLabel(now, target, diffConfig, phrasing) {
+  if (target.getTime() > now.getTime()) return null;
+  const off = calendarDaysOffset(now, target);
+  if (off === -1) return "Ayer";
+  if (off === -2) return "Antes de ayer";
+  const diff = dateDiff(target, now);
+  const diffText = formatDiff(diff, diffConfig, { from: target, to: now });
+  if (phrasing === "paso-hace") {
+    return isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
+  }
+  return isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
+}
 
 let _getConfig = () => ({});
 let _getFilterTags = () => [];
@@ -493,31 +530,13 @@ export function renderCounters() {
 
       // --- NUEVO: Renderizar la cabecera de la serie (sin data-occurrence-date) ---
       if (currentOccurrenceDate) {
-        let diff, diffText, text;
+        let text;
         if (now < currentOccurrenceDate) {
-          diff = dateDiff(now, currentOccurrenceDate);
-          diffText = formatDiff(diff, diffConfig, { from: now, to: currentOccurrenceDate });
-          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
+          text = upcomingCountdownLabel(now, currentOccurrenceDate, diffConfig);
         } else {
-          diff = dateDiff(currentOccurrenceDate, now);
-          diffText = formatDiff(diff, diffConfig, { from: currentOccurrenceDate, to: now });
-          text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
+          text = pastRelativeLabel(now, currentOccurrenceDate, diffConfig, "paso-hace");
         }
-        let frequencyDisplaySuffix = "";
-        switch (counter.frequency) {
-          case "daily":
-            frequencyDisplaySuffix = " (Diario)";
-            break;
-          case "weekly":
-            frequencyDisplaySuffix = " (Semanal)";
-            break;
-          case "monthly":
-            frequencyDisplaySuffix = " (Mensual)";
-            break;
-          case "annual":
-            frequencyDisplaySuffix = " (Anual)";
-            break;
-        }
+        const frequencyDisplaySuffix = _FREQUENCY_LIST_SUFFIX[counter.frequency] || "";
         let fechaStr = formatDateDisplay(currentOccurrenceDate, config.dateFormat || "dd/MM/yyyy", {
           shortForAnnual: counter.frequency === "annual",
           includeTime: !!(counter.date && counter.date.includes("T")),
@@ -630,31 +649,13 @@ export function renderCounters() {
         if (endDate && currentOccurrenceDate > endDate) {
           break;
         }
-        let diff, diffText, text;
+        let text;
         if (now < currentOccurrenceDate) {
-          diff = dateDiff(now, currentOccurrenceDate);
-          diffText = formatDiff(diff, diffConfig, { from: now, to: currentOccurrenceDate });
-          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
+          text = upcomingCountdownLabel(now, currentOccurrenceDate, diffConfig);
         } else {
-          diff = dateDiff(currentOccurrenceDate, now);
-          diffText = formatDiff(diff, diffConfig, { from: currentOccurrenceDate, to: now });
-          text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
+          text = pastRelativeLabel(now, currentOccurrenceDate, diffConfig, "paso-hace");
         }
-        let frequencyDisplaySuffix = "";
-        switch (counter.frequency) {
-          case "daily":
-            frequencyDisplaySuffix = " (Diario)";
-            break;
-          case "weekly":
-            frequencyDisplaySuffix = " (Semanal)";
-            break;
-          case "monthly":
-            frequencyDisplaySuffix = " (Mensual)";
-            break;
-          case "annual":
-            frequencyDisplaySuffix = " (Anual)";
-            break;
-        }
+        const frequencyDisplaySuffix = _FREQUENCY_LIST_SUFFIX[counter.frequency] || "";
         let fechaStr = formatDateDisplay(currentOccurrenceDate, config.dateFormat || "dd/MM/yyyy", {
           shortForAnnual: counter.frequency === "annual",
           includeTime: !!(counter.date && counter.date.includes("T")),
@@ -755,16 +756,12 @@ export function renderCounters() {
     } else {
       // Non-recurring counter
       let target = originalStartDate;
-      let diff, text;
+      let text;
 
       if (now < target) {
-        diff = dateDiff(now, target);
-        const diffText = formatDiff(diff, diffConfig, { from: now, to: target });
-        text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
+        text = upcomingCountdownLabel(now, target, diffConfig);
       } else {
-        diff = dateDiff(target, now);
-        const diffText = formatDiff(diff, diffConfig, { from: target, to: now });
-        text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
+        text = pastRelativeLabel(now, target, diffConfig, "ha-pasado");
       }
       let fechaStr = formatDateDisplay(target, config.dateFormat || "dd/MM/yyyy", {
         includeTime: !!(counter.date && counter.date.includes("T")),
@@ -905,15 +902,11 @@ export function updateCountersTime() {
           continue;
         }
 
-        let diff, diffText, text;
+        let text;
         if (now < occurrenceDate) {
-          diff = dateDiff(now, occurrenceDate);
-          diffText = formatDiff(diff, diffConfig, { from: now, to: occurrenceDate });
-          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
+          text = upcomingCountdownLabel(now, occurrenceDate, diffConfig);
         } else {
-          diff = dateDiff(occurrenceDate, now);
-          diffText = formatDiff(diff, diffConfig, { from: occurrenceDate, to: now });
-          text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
+          text = pastRelativeLabel(now, occurrenceDate, diffConfig, "paso-hace");
         }
         if (timeSpan.textContent !== text) {
           timeSpan.textContent = text;
@@ -925,15 +918,11 @@ export function updateCountersTime() {
       const timeSpan = _getCounterTimeElement(originalIdx, null); // null for non-recurring occurrence index
       if (timeSpan) {
         const target = new Date(counter.date);
-        let diff, diffText, text;
+        let text;
         if (now < target) {
-          diff = dateDiff(now, target);
-          diffText = formatDiff(diff, diffConfig, { from: now, to: target });
-          text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
+          text = upcomingCountdownLabel(now, target, diffConfig);
         } else {
-          diff = dateDiff(target, now);
-          diffText = formatDiff(diff, diffConfig, { from: target, to: now });
-          text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
+          text = pastRelativeLabel(now, target, diffConfig, "ha-pasado");
         }
         if (timeSpan.textContent !== text) {
           timeSpan.textContent = text;
