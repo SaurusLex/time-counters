@@ -92,6 +92,29 @@ function getCounterSortTimestampMs(counter) {
   return next ? next.getTime() : base.getTime();
 }
 
+const DIFF_UNIT_KEYS = [
+  "years",
+  "months",
+  "weeks",
+  "days",
+  "hours",
+  "minutes",
+  "seconds",
+];
+
+/** Objeto de config apto para `formatDiff`: hereda global; si el contador tiene unidades propias, las aplica. */
+function formatDiffConfigForCounter(counter, globalConfig) {
+  if (counter.useGlobalUnits !== false) return globalConfig;
+  if (!counter.units || typeof counter.units !== "object") return globalConfig;
+  const merged = { ...globalConfig };
+  for (const key of DIFF_UNIT_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(counter.units, key)) {
+      merged[key] = !!counter.units[key];
+    }
+  }
+  return merged;
+}
+
 export function initCounterManager(dependencies) {
   _getConfig = dependencies.getConfig;
   _getFilterTags = dependencies.getFilterTags;
@@ -247,6 +270,8 @@ export function addOrUpdateCounter(counterData, editIndex) {
     isPublic,
     originalDate,
     endDate, // <-- Asegúrate de incluir endDate
+    units,
+    useGlobalUnits,
   } = counterData;
 
   if (frequency && frequency !== "none") {
@@ -297,6 +322,8 @@ export function addOrUpdateCounter(counterData, editIndex) {
         : [],
     endDate: frequency !== "none" ? endDate : undefined, // <-- Asegúrate de guardar endDate
     autoDeleteOnReach: Boolean(counterData.autoDeleteOnReach),
+    units: useGlobalUnits !== false ? null : units || null,
+    useGlobalUnits: useGlobalUnits !== false,
   };
 
   if (editIndex !== null) {
@@ -432,6 +459,7 @@ export function renderCounters() {
     // Find the original index of the counter in the unfiltered 'counters' array
     // This is crucial because edit/delete operations rely on the original index.
     const originalIdx = counters.findIndex((c) => c === counter);
+    const diffConfig = formatDiffConfigForCounter(counter, config);
 
     const originalStartDate = new Date(counter.date);
     let editText = "Editar";
@@ -468,11 +496,11 @@ export function renderCounters() {
         let diff, diffText, text;
         if (now < currentOccurrenceDate) {
           diff = dateDiff(now, currentOccurrenceDate);
-          diffText = formatDiff(diff, config, { from: now, to: currentOccurrenceDate });
+          diffText = formatDiff(diff, diffConfig, { from: now, to: currentOccurrenceDate });
           text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(currentOccurrenceDate, now);
-          diffText = formatDiff(diff, config, { from: currentOccurrenceDate, to: now });
+          diffText = formatDiff(diff, diffConfig, { from: currentOccurrenceDate, to: now });
           text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
         let frequencyDisplaySuffix = "";
@@ -605,11 +633,11 @@ export function renderCounters() {
         let diff, diffText, text;
         if (now < currentOccurrenceDate) {
           diff = dateDiff(now, currentOccurrenceDate);
-          diffText = formatDiff(diff, config, { from: now, to: currentOccurrenceDate });
+          diffText = formatDiff(diff, diffConfig, { from: now, to: currentOccurrenceDate });
           text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(currentOccurrenceDate, now);
-          diffText = formatDiff(diff, config, { from: currentOccurrenceDate, to: now });
+          diffText = formatDiff(diff, diffConfig, { from: currentOccurrenceDate, to: now });
           text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
         let frequencyDisplaySuffix = "";
@@ -731,11 +759,11 @@ export function renderCounters() {
 
       if (now < target) {
         diff = dateDiff(now, target);
-        const diffText = formatDiff(diff, config, { from: now, to: target });
+        const diffText = formatDiff(diff, diffConfig, { from: now, to: target });
         text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
       } else {
         diff = dateDiff(target, now);
-        const diffText = formatDiff(diff, config, { from: target, to: now });
+        const diffText = formatDiff(diff, diffConfig, { from: target, to: now });
         text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
       }
       let fechaStr = formatDateDisplay(target, config.dateFormat || "dd/MM/yyyy", {
@@ -821,6 +849,7 @@ export function updateCountersTime() {
   const config = _getConfig();
 
   counters.forEach((counter, originalIdx) => {
+    const diffConfig = formatDiffConfigForCounter(counter, config);
     if (counter.frequency && counter.frequency !== "none") {
       let occurrenceRenderIdx = 0;
       const MAX_REPETITIONS_TO_CHECK = 10;
@@ -879,11 +908,11 @@ export function updateCountersTime() {
         let diff, diffText, text;
         if (now < occurrenceDate) {
           diff = dateDiff(now, occurrenceDate);
-          diffText = formatDiff(diff, config, { from: now, to: occurrenceDate });
+          diffText = formatDiff(diff, diffConfig, { from: now, to: occurrenceDate });
           text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(occurrenceDate, now);
-          diffText = formatDiff(diff, config, { from: occurrenceDate, to: now });
+          diffText = formatDiff(diff, diffConfig, { from: occurrenceDate, to: now });
           text = isFirstValueSingular(diffText) ? `Pasó hace ${diffText}` : `Pasaron hace ${diffText}`;
         }
         if (timeSpan.textContent !== text) {
@@ -899,11 +928,11 @@ export function updateCountersTime() {
         let diff, diffText, text;
         if (now < target) {
           diff = dateDiff(now, target);
-          diffText = formatDiff(diff, config, { from: now, to: target });
+          diffText = formatDiff(diff, diffConfig, { from: now, to: target });
           text = isFirstValueSingular(diffText) ? `Queda ${diffText}` : `Quedan ${diffText}`;
         } else {
           diff = dateDiff(target, now);
-          diffText = formatDiff(diff, config, { from: target, to: now });
+          diffText = formatDiff(diff, diffConfig, { from: target, to: now });
           text = isFirstValueSingular(diffText) ? `Ha pasado ${diffText}` : `Han pasado ${diffText}`;
         }
         if (timeSpan.textContent !== text) {

@@ -433,6 +433,46 @@ function initModalCalendarPickers() {
   initDateInputsIn(form, { getFormatKey: getModalDateFormatKey });
 }
 
+function syncCounterModalUnitButtonSelection(root, sourceLikeConfig) {
+  const wrap = root?.querySelector("#modal-counter-units-buttons-wrap");
+  if (!wrap) return;
+  wrap.querySelectorAll(".unit-btn[data-unit]").forEach((btn) => {
+    const key = btn.dataset.unit;
+    btn.classList.toggle("selected", !!sourceLikeConfig[key]);
+  });
+}
+
+function updateCounterModalUnitsInteractivity(root) {
+  const r = root || getCounterRoot() || document;
+  const cb = r.querySelector("#modal-counter-use-global-units");
+  const wrap = r.querySelector("#modal-counter-units-buttons-wrap");
+  if (!cb || !wrap) return;
+  const useGlobal = cb.checked;
+  wrap.querySelectorAll(".unit-btn").forEach((btn) => {
+    btn.disabled = useGlobal;
+  });
+}
+
+function initCounterModalUnitsControls() {
+  const form = document.getElementById("counter-form-modal");
+  const globalCb = document.getElementById("modal-counter-use-global-units");
+  if (!form || !globalCb) return;
+
+  globalCb.addEventListener("change", () => {
+    const root = getCounterRoot();
+    if (globalCb.checked) {
+      syncCounterModalUnitButtonSelection(root, getConfig());
+    }
+    updateCounterModalUnitsInteractivity(root);
+  });
+
+  form.addEventListener("click", (e) => {
+    const btn = e.target.closest("#modal-counter-units-buttons-wrap .unit-btn");
+    if (!btn || btn.disabled) return;
+    btn.classList.toggle("selected");
+  });
+}
+
 function openCounterModal(mode = "new", idx = null) {
   const isMobile = window.matchMedia("(max-width: 600px)").matches;
   const modal = document.getElementById("counter-modal");
@@ -472,8 +512,10 @@ function openCounterModal(mode = "new", idx = null) {
     if (typeof lucide !== "undefined") lucide.createIcons({ root: counterModalRoot });
   } else {
     counterModalRoot = modalContent;
+    const wasAlreadyOpen = modal.style.display === "flex";
     modal.style.display = "flex";
-    lockBodyScroll();
+    // Evitar lockCount > 1 si se vuelve a abrir sin cerrar (p. ej. doble clic): un solo lock por sesión de modal.
+    if (!wasAlreadyOpen) lockBodyScroll();
   }
 
   const root = getCounterRoot();
@@ -540,6 +582,17 @@ function openCounterModal(mode = "new", idx = null) {
     updateFrequencyDependentUI(root, freq);
     const autoDeleteInput = root?.querySelector("#modal-counter-auto-delete");
     if (autoDeleteInput) autoDeleteInput.checked = !!counter.autoDeleteOnReach;
+    const useGlobalUnitsCb = root?.querySelector("#modal-counter-use-global-units");
+    if (useGlobalUnitsCb) {
+      const useGlobal = counter.useGlobalUnits !== false;
+      useGlobalUnitsCb.checked = useGlobal;
+      const unitSource =
+        !useGlobal && counter.units && typeof counter.units === "object"
+          ? counter.units
+          : getConfig();
+      syncCounterModalUnitButtonSelection(root, unitSource);
+      updateCounterModalUnitsInteractivity(root);
+    }
     if (title) title.textContent = "Editar contador";
     editingIdx = idx;
   } else {
@@ -552,6 +605,12 @@ function openCounterModal(mode = "new", idx = null) {
     if (endDateInput) endDateInput.value = "";
     const autoDeleteInput = root?.querySelector("#modal-counter-auto-delete");
     if (autoDeleteInput) autoDeleteInput.checked = false;
+    const useGlobalUnitsCb = root?.querySelector("#modal-counter-use-global-units");
+    if (useGlobalUnitsCb) {
+      useGlobalUnitsCb.checked = true;
+      syncCounterModalUnitButtonSelection(root, getConfig());
+      updateCounterModalUnitsInteractivity(root);
+    }
     updateFrequencyDependentUI(root, "none");
     if (title) title.textContent = "Nuevo contador";
     editingIdx = null;
@@ -575,9 +634,11 @@ function closeCounterModal() {
   if (counterSheetView) {
     counterSheetView.close();
   } else {
-    document.getElementById("counter-modal").style.display = "none";
-    unlockBodyScroll();
+    const el = document.getElementById("counter-modal");
+    if (el) el.style.display = "none";
   }
+  // Siempre liberar la capa de scroll de este modal (BottomSheet también desbloquea en ~200ms; aquí evita quedar bloqueado si hubo desajuste de contadores).
+  unlockBodyScroll();
   counterModalRoot = null;
   counterSheetView = null;
   editingIdx = null;
@@ -999,6 +1060,18 @@ document
       combinedDate = `${dateIso}T${time}`;
     }
 
+    const useGlobalUnitsEl = document.getElementById("modal-counter-use-global-units");
+    const useGlobalUnits = useGlobalUnitsEl ? useGlobalUnitsEl.checked : true;
+    let units = null;
+    if (!useGlobalUnits) {
+      units = {};
+      document
+        .querySelectorAll("#modal-counter-units-buttons-wrap .unit-btn[data-unit]")
+        .forEach((btn) => {
+          units[btn.dataset.unit] = btn.classList.contains("selected");
+        });
+    }
+
     const counterData = {
       name,
       date: combinedDate,
@@ -1006,6 +1079,8 @@ document
       frequency,
       endDate: frequency !== "none" ? endDateIso : "", // Save endDate only if recurring
       autoDeleteOnReach,
+      units,
+      useGlobalUnits,
     };
 
     // Use the manager function to add or update the counter
@@ -1139,6 +1214,7 @@ function renderAuthStatusIndicator() {
 
 window.addEventListener("DOMContentLoaded", () => {
   initModalCalendarPickers();
+  initCounterModalUnitsControls();
   initFrequencyDropdown();
   initSortDropdown();
   initTimeFilterDropdown();
