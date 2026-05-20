@@ -87,6 +87,13 @@
   height: 1.1em;
   flex-shrink: 0;
 }
+.dropdown-option--danger {
+  color: #d9534f;
+}
+.dropdown-option--danger:hover {
+  background: #fff0f0;
+  color: #a71d2a;
+}
 .dropdown-trigger--custom {
   width: auto;
   min-width: unset; /* override global button { min-width: 140px } in button.css */
@@ -107,4 +114,35 @@
   width: max-content;
   max-width: 100%;
   display: inline-block;
+}
+
+/* Action menus (auth + counter kebab): same panel/option behavior */
+.auth-menu-dropdown .dropdown-panel,
+.counter-actions-menu .dropdown-panel {
+  max-height: none;
+  overflow: visible;
+}
+.auth-menu-dropdown .dropdown-list,
+.counter-actions-menu .dropdown-list {
+  min-width: 10rem;
+}
+.counter-actions-menu .dropdown-option,
+.auth-menu-dropdown .dropdown-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+}
+.counter-actions-menu .dropdown-option--with-icon span,
+.auth-menu-dropdown .dropdown-option--with-icon span {
+  flex: 0 1 auto;
+}
+.counter-actions-menu .dropdown-option:hover,
+.auth-menu-dropdown .dropdown-option:hover {
+  background: #f8f9fa;
+}
+.counter-actions-menu .dropdown-option--danger:hover,
+.auth-menu-dropdown .dropdown-option--danger:hover {
+  background: #fff0f0;
+  color: #a71d2a;
 }

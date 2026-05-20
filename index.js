@@ -1097,13 +1097,6 @@ document
     }
   });
 
-document.getElementById("counters-list").onclick = function (e) {
-  const btn = e.target.closest(".edit-btn");
-  if (btn) {
-    openCounterModal("edit", btn.getAttribute("data-idx"));
-  }
-};
-
 function renderFilterTags() {
   const filtersBar = document.getElementById("counters-filters-bar");
   if (filtersBar) {
@@ -1123,6 +1116,7 @@ function renderFilterTags() {
   allTags.forEach((tag) => {
     const btn = window.createTag({
       text: tag,
+      size: "sm",
       removable: false,
       selectable: true,
       selected: currentFilterTags.includes(tag),

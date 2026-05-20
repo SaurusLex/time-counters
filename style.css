@@ -50,42 +50,26 @@ body {
   ul#counters-list {
     margin-top: 0;
   }
-  ul#counters-list li {
+  ul#counters-list > li {
     flex-direction: column;
     align-items: stretch;
     padding: var(--space-4) var(--space-4);
     margin-bottom: var(--space-3);
   }
-  .counter-info {
-    text-align: left;
-    justify-content: flex-start;
+  .counter-card-inner {
     width: 100%;
   }
-  .counter-info > span {
-    text-align: left;
-    width: 100%;
-  }
-  .counter-info > span .counter-name {
+  .counter-card-header .counter-name {
     font-size: 1.05em;
     text-align: left;
   }
-  .counter-info > span > .counter-date {
+  .counter-card-body .counter-date,
+  .counter-card-body .counter-time {
     text-align: left;
   }
-  .counter-info > span > .counter-time {
+  .counter-card-body .counter-time {
     font-size: 0.9em;
     word-break: break-word;
-    text-align: left;
-  }
-  .counter-actions {
-    margin-left: 0;
-    margin-top: 12px;
-    justify-content: flex-end;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  ul#counters-list li button {
-    margin-left: 0;
   }
 }
 .app-title-row {
@@ -203,15 +187,15 @@ ul#counters-list {
   list-style: none;
   padding: 0;
 }
-ul#counters-list li {
+ul#counters-list > li {
   background: var(--color-surface-card);
   margin-bottom: var(--space-4);
   padding: var(--space-5) var(--space-5);
   border-radius: var(--radius-lg);
   display: flex;
   flex-wrap: nowrap;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
+  justify-content: flex-start;
   border: 1px solid rgba(0, 0, 0, 0.04);
   /* Smooth Shadow Stack 2026: umbra + penumbra + ambient occlusion */
   box-shadow:
@@ -222,18 +206,42 @@ ul#counters-list li {
   transform: none;
   z-index: 0;
 }
-ul#counters-list li:hover {
+ul#counters-list > li:hover {
   background: var(--color-surface-card-hover);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.06),
     0 4px 8px rgba(0, 0, 0, 0.06),
     0 8px 16px rgba(0, 0, 0, 0.06);
 }
-.counter-info {
+/* Menú abierto: no elevar la card al pasar por las opciones (panel sigue dentro del <li>) */
+ul#counters-list > li:has(.counter-actions-menu.open),
+ul#counters-list > li:has(.counter-actions-menu.open):hover {
+  background: var(--color-surface-card);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 4px 8px rgba(0, 0, 0, 0.05);
+}
+.counter-card-inner {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.counter-card-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+.counter-card-header .counter-title-row {
   flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.counter-card-body {
   min-width: 0;
 }
 .counter-title-row {
@@ -264,22 +272,46 @@ ul#counters-list li:hover {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
-.counter-info > span > .counter-date,
-.counter-info > span > .counter-time {
+.counter-card-body > .counter-date,
+.counter-card-body > .counter-time {
   display: block;
-  margin-bottom: 4px; /* Adjust as needed */
+  margin-bottom: 4px;
 }
-.counter-info > span > .counter-tags {
+.counter-card-body > .counter-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px; /* Controls spacing between tags */
-  margin-top: 8px; /* Combined from original .counter-tags and specific context */
-  margin-bottom: 4px; /* Combined from original .counter-tags and specific context */
+  gap: 6px;
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 .counter-actions {
   display: flex;
-  gap: 6px;
-  margin-left: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.counter-actions-menu.dropdown-wrapper {
+  width: max-content;
+  max-width: 100%;
+  display: inline-block;
+}
+.counter-kebab-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #6b7280;
+  border-radius: var(--radius-sm);
+  transition: background 0.18s, color 0.18s;
+}
+.counter-actions-menu .dropdown-trigger:hover .counter-kebab-trigger,
+.counter-actions-menu .dropdown-trigger:focus .counter-kebab-trigger {
+  background: rgba(0, 0, 0, 0.06);
+  color: #374151;
+}
+.counter-kebab-trigger svg {
+  width: 1.25em;
+  height: 1.25em;
 }
 .counter-name {
   font-weight: bold;
@@ -298,34 +330,6 @@ ul#counters-list li:hover {
   font-size: 0.97em;
   /* margin-right: 16px; */ /* Removed to allow block display */
 }
-ul#counters-list li button {
-  margin-left: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  font-size: 0.97em;
-  border-radius: var(--radius-sm);
-  border: none;
-  cursor: pointer;
-  transition: background 0.18s, color 0.18s;
-}
-ul#counters-list li .edit-btn {
-  background: #fffbe6;
-  color: #b8860b;
-  border: 1px solid #ffe58f;
-}
-ul#counters-list li .edit-btn:hover {
-  background: #fff3cd;
-  color: #856404;
-}
-ul#counters-list li .delete-btn {
-  background: #fff0f0;
-  color: #d9534f;
-  border: 1px solid #f5c6cb;
-}
-ul#counters-list li .delete-btn:hover {
-  background: #f8d7da;
-  color: #a71d2a;
-}
-
 #counter-form-modal {
   display: flex;
   flex-direction: column;

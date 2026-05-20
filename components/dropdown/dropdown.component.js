@@ -163,6 +163,7 @@ function createDropdown({
     const li = document.createElement("li");
     li.className = "dropdown-option";
     if (opt.icon) li.classList.add("dropdown-option--with-icon");
+    if (opt.variant === "danger") li.classList.add("dropdown-option--danger");
     li.dataset.value = String(opt.value);
     li.setAttribute("role", "option");
     if (opt.icon) {

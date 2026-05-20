@@ -234,58 +234,79 @@ function createCounterCard(opts) {
 
   const actions = document.createElement("span");
   actions.className = "counter-actions";
-  actions.appendChild(
-    window.createButton({
-      text: editText,
-      color: "secondary",
-      type: "button",
-      "data-idx": originalIdx.toString(),
-      className: "edit-btn",
-      onClick: () => _openCounterModal("edit", originalIdx),
-    })
-  );
-  actions.appendChild(
-    window.createButton({
-      text: deleteText,
-      color: "danger",
-      type: "button",
-      "data-idx": originalIdx.toString(),
-      className: "delete-btn",
-      onClick: (e) => {
-        if (isRecurring) {
-          const row = e.target.closest("li");
-          const occurrenceDate = row ? row.getAttribute("data-occurrence-date") : null;
-          _showDeleteConfirm({
-            message: "¿Qué deseas borrar?",
-            actions: [
-              {
-                text: "Solo este evento",
-                className: "btn-danger",
-                onClick: () => {
-                  if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
-                  else deleteCounter(counter.id, null);
-                },
-              },
-              { text: "Toda la serie", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-              { text: "Cancelar", className: "btn-secondary" },
-            ],
-            anchorElement: e.target,
-            counterName: counter.name,
-          });
-        } else {
-          _showDeleteConfirm({
-            message: "¿Estás seguro de eliminar este contador?",
-            actions: [
-              { text: "Eliminar", className: "btn-danger", onClick: () => deleteCounter(counter.id, null) },
-              { text: "Cancelar", className: "btn-secondary" },
-            ],
-            anchorElement: e.target,
-            counterName: counter.name,
-          });
-        }
-      },
-    })
-  );
+
+  const kebabTrigger = document.createElement("span");
+  kebabTrigger.className = "counter-kebab-trigger";
+  kebabTrigger.innerHTML = '<i data-lucide="ellipsis-vertical" aria-hidden="true"></i>';
+
+  const menu =
+    typeof window.createDropdown === "function"
+      ? window.createDropdown({
+          options: [
+            { value: "edit", label: editText, icon: "pencil" },
+            { value: "delete", label: deleteText, icon: "trash-2", variant: "danger" },
+          ],
+          value: null,
+          persistSelection: false,
+          triggerChildren: kebabTrigger,
+          className: "counter-actions-menu",
+          mobileTitle: counter.name || "Acciones",
+          panelAlign: "end",
+          panelMinWidth: "180px",
+          onSelect: (val) => {
+            if (val === "edit") {
+              _openCounterModal("edit", originalIdx);
+              return;
+            }
+            if (val !== "delete") return;
+            const anchorElement = menu.querySelector(".dropdown-trigger");
+            if (isRecurring) {
+              const occurrenceDate = li.getAttribute("data-occurrence-date");
+              _showDeleteConfirm({
+                message: "¿Qué deseas borrar?",
+                actions: [
+                  {
+                    text: "Solo este evento",
+                    className: "btn-danger",
+                    onClick: () => {
+                      if (occurrenceDate) deleteCounter(counter.id, occurrenceDate);
+                      else deleteCounter(counter.id, null);
+                    },
+                  },
+                  {
+                    text: "Toda la serie",
+                    className: "btn-danger",
+                    onClick: () => deleteCounter(counter.id, null),
+                  },
+                  { text: "Cancelar", className: "btn-secondary" },
+                ],
+                anchorElement,
+                counterName: counter.name,
+              });
+            } else {
+              _showDeleteConfirm({
+                message: "¿Estás seguro de eliminar este contador?",
+                actions: [
+                  {
+                    text: "Eliminar",
+                    className: "btn-danger",
+                    onClick: () => deleteCounter(counter.id, null),
+                  },
+                  { text: "Cancelar", className: "btn-secondary" },
+                ],
+                anchorElement,
+                counterName: counter.name,
+              });
+            }
+          },
+        })
+      : null;
+
+  if (menu) {
+    const triggerBtn = menu.querySelector(".dropdown-trigger");
+    if (triggerBtn) triggerBtn.setAttribute("aria-label", "Acciones");
+    actions.appendChild(menu);
+  }
 
   const timeSpanId =
     timeIdSuffix === null || timeIdSuffix === undefined
@@ -293,16 +314,19 @@ function createCounterCard(opts) {
       : `counter-time-${originalIdx}-${timeIdSuffix}`;
 
   li.innerHTML = `
-                  <span class="counter-info">
-                    <span>
+                  <div class="counter-card-inner">
+                    <div class="counter-card-header">
                       ${counterTitleRowHtml(counter)}
+                    </div>
+                    <div class="counter-card-body">
                       <span class="counter-date">(${fechaStr})</span>
                       <span class="counter-time" id="${timeSpanId}">${text}</span>
                       ${tagsHtml}
-                    </span>
-                  </span>
+                    </div>
+                  </div>
                 `;
-  li.appendChild(actions);
+  const header = li.querySelector(".counter-card-header");
+  if (header) header.appendChild(actions);
   return li;
 }
 
