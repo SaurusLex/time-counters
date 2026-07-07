@@ -1,6 +1,7 @@
 /**
  * Calendario popover (lunes como primer día). Se ancla al input de texto y se monta en document.body.
  */
+import { isMobile } from "../bottom-sheet/bottom-sheet-options.js";
 import { formatDateDisplay, parseDateInput } from "../../utils/dateUtils.js";
 
 const MONTH_NAMES = [
@@ -77,6 +78,11 @@ export function closeActiveCalendarPopover() {
  */
 export function attachCalendarPopover(textInput, { getFormatKey }) {
   if (!textInput) return;
+
+  if (isMobile()) {
+    textInput.readOnly = true;
+    textInput.inputMode = "none";
+  }
 
   let layer = null;
   let viewYear = new Date().getFullYear();
@@ -252,6 +258,10 @@ export function attachCalendarPopover(textInput, { getFormatKey }) {
 
   function open() {
     if (activeClose && activeClose !== close) activeClose();
+
+    if (isMobile()) {
+      textInput.blur();
+    }
 
     const parsed = parseDateInput(textInput.value.trim(), getFormat());
     if (parsed) {
