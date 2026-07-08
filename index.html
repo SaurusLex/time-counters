@@ -26,7 +26,25 @@
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   </head>
   <body>
-    <div class="container">
+    <div class="app-layout">
+      <aside id="app-sidebar" class="app-sidebar" aria-label="Panel lateral">
+        <div class="sidebar-filters filters-desktop-only">
+          <div class="filter-tags-section">
+            <label>Filtrar por etiquetas:</label>
+            <div class="filter-tags-list"></div>
+          </div>
+          <div class="time-quick-filters-row">
+            <label class="time-quick-filters-label">Periodo:</label>
+            <div
+              class="time-quick-filters"
+              role="group"
+              aria-label="Periodo"
+            ></div>
+          </div>
+        </div>
+      </aside>
+      <div class="container app-main">
+      <div class="app-main-top">
       <div class="app-title-row">
         <img
           class="app-title-icon"
@@ -60,23 +78,24 @@
           <div id="sort-dropdown-container" class="filters-desktop-only"></div>
           <div id="time-filter-dropdown-container" class="filters-desktop-only"></div>
         </div>
+      </div>
+      </div>
+      <div class="main-filters filters-mobile-only">
+        <div class="filter-tags-section">
+          <label>Filtrar por etiquetas:</label>
+          <div class="filter-tags-list"></div>
+        </div>
         <div class="time-quick-filters-row">
-          <label id="time-quick-filters-label" class="time-quick-filters-label"
-            >Periodo:</label
-          >
+          <label class="time-quick-filters-label">Periodo:</label>
           <div
-            id="time-quick-filters"
             class="time-quick-filters"
             role="group"
-            aria-labelledby="time-quick-filters-label"
+            aria-label="Periodo"
           ></div>
         </div>
       </div>
-      <div class="filter-tags-section">
-        <label>Filtrar por etiquetas:</label>
-        <div id="filter-tags-list"></div>
-      </div>
       <ul id="counters-list"></ul>
+      </div>
     </div>
     <!-- Modal para crear/editar contador con etiquetas -->
     <div id="counter-modal" class="modal" style="display: none">
