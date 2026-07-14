@@ -53,6 +53,7 @@ let _getConfig = () => ({});
 let _getFilterTags = () => [];
 let _getSortOrder = () => "recent";
 let _getTimeFilter = () => "all";
+let _getArchiveFilter = () => "active";
 let _getQuickDateRangeFilter = () => ({ mode: "none" });
 let _getSearchQuery = () => "";
 let _openCounterModal = () => {};
@@ -64,8 +65,14 @@ let _showDeleteConfirm = (opts) => {
   import("../components/popover/popover.js").then(({ showPopover }) => showPopover(opts));
 };
 let _onAfterDelete = () => {};
+let _onAfterArchive = () => {};
 let _onAutoPurge = () => {};
 let _onAfterRenderCounters = () => {};
+
+/** @param {object|null|undefined} counter */
+export function isCounterArchived(counter) {
+  return Boolean(counter?.archivedAt);
+}
 
 function normalizeQuickRange(raw) {
   if (!raw || typeof raw !== "object") return { mode: "none" };
@@ -157,6 +164,7 @@ export function initCounterManager(dependencies) {
   _getFilterTags = dependencies.getFilterTags;
   _getSortOrder = dependencies.getSortOrder || _getSortOrder;
   _getTimeFilter = dependencies.getTimeFilter || _getTimeFilter;
+  _getArchiveFilter = dependencies.getArchiveFilter || _getArchiveFilter;
   _getQuickDateRangeFilter =
     dependencies.getQuickDateRangeFilter || _getQuickDateRangeFilter;
   _getSearchQuery = dependencies.getSearchQuery || _getSearchQuery;
@@ -167,6 +175,7 @@ export function initCounterManager(dependencies) {
   _renderCounters = renderCounters;
   if (dependencies.showDeleteConfirm) _showDeleteConfirm = dependencies.showDeleteConfirm;
   if (dependencies.onAfterDelete) _onAfterDelete = dependencies.onAfterDelete;
+  if (dependencies.onAfterArchive) _onAfterArchive = dependencies.onAfterArchive;
   if (dependencies.onAutoPurge) _onAutoPurge = dependencies.onAutoPurge;
   if (dependencies.onAfterRenderCounters) {
     _onAfterRenderCounters = dependencies.onAfterRenderCounters;
@@ -239,13 +248,26 @@ function createCounterCard(opts) {
   kebabTrigger.className = "counter-kebab-trigger";
   kebabTrigger.innerHTML = '<i data-lucide="ellipsis-vertical" aria-hidden="true"></i>';
 
+  const archived = isCounterArchived(counter);
+  const menuOptions = [
+    { value: "edit", label: editText, icon: "pencil" },
+  ];
+  if (archived) {
+    menuOptions.push({ value: "restore", label: "Restaurar", icon: "archive-restore" });
+  } else {
+    menuOptions.push({ value: "archive", label: "Archivar", icon: "archive" });
+  }
+  menuOptions.push({
+    value: "delete",
+    label: deleteText,
+    icon: "trash-2",
+    variant: "danger",
+  });
+
   const menu =
     typeof window.createDropdown === "function"
       ? window.createDropdown({
-          options: [
-            { value: "edit", label: editText, icon: "pencil" },
-            { value: "delete", label: deleteText, icon: "trash-2", variant: "danger" },
-          ],
+          options: menuOptions,
           value: null,
           persistSelection: false,
           triggerChildren: kebabTrigger,
@@ -256,6 +278,14 @@ function createCounterCard(opts) {
           onSelect: (val) => {
             if (val === "edit") {
               _openCounterModal("edit", originalIdx);
+              return;
+            }
+            if (val === "archive") {
+              archiveCounter(counter.id);
+              return;
+            }
+            if (val === "restore") {
+              restoreCounter(counter.id);
               return;
             }
             if (val !== "delete") return;
@@ -344,7 +374,7 @@ function endOfLocalCalendarDay(date) {
 
 /** True si el contador debe eliminarse por autoborrado (opción activa y fecha cumplida). */
 export function shouldCounterAutoDelete(counter, now = new Date()) {
-  if (!counter || !counter.autoDeleteOnReach) return false;
+  if (!counter || isCounterArchived(counter) || !counter.autoDeleteOnReach) return false;
   const freq = counter.frequency || "none";
   if (freq === "none") {
     const raw = String(counter.date ?? "").trim();
@@ -437,6 +467,50 @@ export function deleteCounter(id, occurrenceDateString) {
   return true;
 }
 
+export function archiveCounter(id) {
+  const counters = getCounters();
+  const index = counters.findIndex((c) => c.id === id);
+  if (index === -1) {
+    console.warn(`Counter with id ${id} not found for archiving.`);
+    return false;
+  }
+  if (isCounterArchived(counters[index])) return true;
+
+  const nowIso = auditTimestampIso();
+  counters[index] = {
+    ...counters[index],
+    archivedAt: nowIso,
+    updatedAt: nowIso,
+  };
+  saveCounters(counters);
+  _renderCounters();
+  _renderFilterTags();
+  _onAfterArchive?.({ kind: "archive" });
+  return true;
+}
+
+export function restoreCounter(id) {
+  const counters = getCounters();
+  const index = counters.findIndex((c) => c.id === id);
+  if (index === -1) {
+    console.warn(`Counter with id ${id} not found for restore.`);
+    return false;
+  }
+  if (!isCounterArchived(counters[index])) return true;
+
+  const nowIso = auditTimestampIso();
+  counters[index] = {
+    ...counters[index],
+    archivedAt: null,
+    updatedAt: nowIso,
+  };
+  saveCounters(counters);
+  _renderCounters();
+  _renderFilterTags();
+  _onAfterArchive?.({ kind: "restore" });
+  return true;
+}
+
 export function addOrUpdateCounter(counterData, editIndex) {
   let counters = getCounters();
   const {
@@ -503,6 +577,8 @@ export function addOrUpdateCounter(counterData, editIndex) {
     autoDeleteOnReach: Boolean(counterData.autoDeleteOnReach),
     units: useGlobalUnits !== false ? null : units || null,
     useGlobalUnits: useGlobalUnits !== false,
+    deletedOccurrences: prev?.deletedOccurrences,
+    archivedAt: prev?.archivedAt ?? null,
   };
 
   if (editIndex !== null) {
@@ -543,11 +619,18 @@ export function renderCounters() {
   const now = new Date();
   const config = _getConfig();
   list.innerHTML = "";
-  let filtered = counters;
+  const archiveFilter = _getArchiveFilter();
+  let filtered = counters.filter((c) =>
+    archiveFilter === "archived"
+      ? isCounterArchived(c)
+      : !isCounterArchived(c)
+  );
+  const activeCounters = counters.filter((c) => !isCounterArchived(c));
+  const archivedCounters = counters.filter((c) => isCounterArchived(c));
   const filterTags = _getFilterTags();
 
   if (filterTags.length) {
-    filtered = counters.filter(
+    filtered = filtered.filter(
       (c) =>
         Array.isArray(c.tags) && filterTags.every((tag) => c.tags.includes(tag))
     );
@@ -606,27 +689,51 @@ export function renderCounters() {
   if (filtered.length === 0) {
     const isTrulyEmpty = counters.length === 0;
     const hasSearch = Boolean((_getSearchQuery() || "").trim());
-    const li = isTrulyEmpty
-      ? createEmptyStateListItem({
-          icon: "calendar-clock",
-          title: "Aún no tienes contadores",
-          subtitle:
-            "Crea uno para llevar la cuenta hasta una fecha o desde un evento.",
-          primaryAction: {
-            text: "Añadir contador",
-            icon: "plus",
-            color: "add",
-            onClick: () => _openCounterModal("new"),
-          },
-        })
-      : createEmptyStateListItem({
-          icon: "filter-x",
-          title: "Ningún contador coincide",
-          subtitle: hasSearch
-            ? "Prueba otras palabras o borra el texto de búsqueda. También puedes ajustar etiquetas o «Mostrar»."
-            : "Prueba a quitar filtros de etiquetas o a cambiar «Mostrar» en la barra de filtros.",
-          primaryAction: null,
-        });
+    const hasOtherFilters =
+      filterTags.length > 0 ||
+      timeFilter !== "all" ||
+      quick.mode !== "none" ||
+      hasSearch;
+
+    let emptyState;
+    if (isTrulyEmpty) {
+      emptyState = createEmptyStateListItem({
+        icon: "calendar-clock",
+        title: "Aún no tienes contadores",
+        subtitle:
+          "Crea uno para llevar la cuenta hasta una fecha o desde un evento.",
+        primaryAction: {
+          text: "Añadir contador",
+          icon: "plus",
+          color: "add",
+          onClick: () => _openCounterModal("new"),
+        },
+      });
+    } else if (!hasOtherFilters && archiveFilter === "archived" && archivedCounters.length === 0) {
+      emptyState = createEmptyStateListItem({
+        icon: "archive",
+        title: "No hay contadores archivados",
+        subtitle: "Los contadores que archives aparecerán aquí.",
+        primaryAction: null,
+      });
+    } else if (!hasOtherFilters && archiveFilter === "active" && activeCounters.length === 0) {
+      emptyState = createEmptyStateListItem({
+        icon: "archive",
+        title: "No hay contadores activos",
+        subtitle: "Todos tus contadores están archivados. Cambia la vista a «Archivados» para verlos.",
+        primaryAction: null,
+      });
+    } else {
+      emptyState = createEmptyStateListItem({
+        icon: "filter-x",
+        title: "Ningún contador coincide",
+        subtitle: hasSearch
+          ? "Prueba otras palabras o borra el texto de búsqueda. También puedes ajustar etiquetas o «Mostrar»."
+          : "Prueba a quitar filtros de etiquetas o a cambiar «Mostrar» en la barra de filtros.",
+        primaryAction: null,
+      });
+    }
+    const li = emptyState;
     list.appendChild(li);
     refreshEmptyStateIcons(li);
     _renderFilterTags();

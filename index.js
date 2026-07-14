@@ -40,6 +40,7 @@ import {
   updateCountersTime,
   deleteCounter as deleteCounterFromManager,
   addOrUpdateCounter,
+  isCounterArchived,
 } from "./core/counterManager.js";
 import { showPopover } from "./components/popover/popover.js";
 import Modal from "./components/modal/modal.component.js";
@@ -161,6 +162,21 @@ function saveTimeFilter(value) {
     localStorage.setItem("countersTimeFilter", value);
   } else {
     localStorage.setItem("countersTimeFilter", "all");
+  }
+}
+
+const ARCHIVE_FILTER_KEY = "countersArchiveFilter";
+
+function getArchiveFilter() {
+  const saved = localStorage.getItem(ARCHIVE_FILTER_KEY);
+  return saved === "archived" ? "archived" : "active";
+}
+
+function saveArchiveFilter(value) {
+  if (value === "archived") {
+    localStorage.setItem(ARCHIVE_FILTER_KEY, "archived");
+  } else {
+    localStorage.setItem(ARCHIVE_FILTER_KEY, "active");
   }
 }
 
@@ -332,6 +348,7 @@ initCounterManager({
   getFilterTags,
   getSortOrder,
   getTimeFilter,
+  getArchiveFilter,
   getQuickDateRangeFilter,
   getSearchQuery,
   openCounterModal,
@@ -344,6 +361,19 @@ initCounterManager({
   onAfterDelete: async (ctx = {}) => {
     const deletedOccurrence = ctx.kind === "occurrence";
     showToast(deletedOccurrence ? "Evento eliminado" : "Contador eliminado", {
+      variant: "default",
+      placement: "top-right",
+      size: "lg",
+    });
+    if (isSignedIn()) {
+      try {
+        await backupToFirestore();
+      } catch (e) {}
+    }
+  },
+  onAfterArchive: async (ctx = {}) => {
+    const restored = ctx.kind === "restore";
+    showToast(restored ? "Contador restaurado" : "Contador archivado", {
       variant: "default",
       placement: "top-right",
       size: "lg",
@@ -657,8 +687,14 @@ function closeCounterModal() {
 
 function getAllTags() {
   const counters = getCounters();
+  const archiveFilter = getArchiveFilter();
   const tagsSet = new Set();
   counters.forEach((c) => {
+    const inView =
+      archiveFilter === "archived"
+        ? isCounterArchived(c)
+        : !isCounterArchived(c);
+    if (!inView) return;
     if (Array.isArray(c.tags)) {
       c.tags.forEach((tag) => tagsSet.add(tag));
     }
@@ -790,6 +826,11 @@ const TIME_FILTER_OPTIONS = [
   { value: "all", label: "Todos" },
   { value: "past", label: "Contadores pasados" },
   { value: "future", label: "Contadores futuros" },
+];
+
+const ARCHIVE_FILTER_OPTIONS = [
+  { value: "active", label: "Activos" },
+  { value: "archived", label: "Archivados" },
 ];
 
 /**
@@ -969,6 +1010,27 @@ function initTimeFilterDropdown() {
   container.appendChild(dropdown);
 }
 
+function initArchiveFilterDropdown() {
+  const container = document.getElementById("archive-filter-dropdown-container");
+  if (!container || typeof createDropdown !== "function") return;
+
+  const dropdown = createDropdown({
+    options: ARCHIVE_FILTER_OPTIONS,
+    value: getArchiveFilter(),
+    placeholder: "Vista...",
+    mobileTitle: "Vista",
+    className: "archive-filter-dropdown",
+    onSelect: (value) => {
+      saveArchiveFilter(value);
+      currentFilterTags = [];
+      renderFilterTags();
+      renderCounters();
+    },
+  });
+  container.innerHTML = "";
+  container.appendChild(dropdown);
+}
+
 function initFiltersMobileButton() {
   const wrap = document.getElementById("filters-mobile-toolbar");
   if (!wrap || typeof window.createButton !== "function") return;
@@ -982,8 +1044,10 @@ function initFiltersMobileButton() {
       openFiltersBottomSheet({
         sortOptions: SORT_OPTIONS,
         timeOptions: TIME_FILTER_OPTIONS,
+        archiveOptions: ARCHIVE_FILTER_OPTIONS,
         getSort: getSortOrder,
         getTime: getTimeFilter,
+        getArchive: getArchiveFilter,
         onSortChange: (value) => {
           saveSortOrder(value);
           renderCounters();
@@ -992,6 +1056,13 @@ function initFiltersMobileButton() {
           saveTimeFilter(value);
           renderCounters();
           initTimeFilterDropdown();
+        },
+        onArchiveChange: (value) => {
+          saveArchiveFilter(value);
+          currentFilterTags = [];
+          renderFilterTags();
+          renderCounters();
+          initArchiveFilterDropdown();
         },
       });
     },
@@ -1232,6 +1303,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initFrequencyDropdown();
   initSortDropdown();
   initTimeFilterDropdown();
+  initArchiveFilterDropdown();
   initFiltersMobileButton();
   const searchInput = document.getElementById("counters-search-input");
   if (searchInput) {
