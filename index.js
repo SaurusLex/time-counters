@@ -1010,25 +1010,39 @@ function initTimeFilterDropdown() {
   container.appendChild(dropdown);
 }
 
-function initArchiveFilterDropdown() {
-  const container = document.getElementById("archive-filter-dropdown-container");
-  if (!container || typeof createDropdown !== "function") return;
+function updateAppNavSelection() {
+  const nav = document.getElementById("app-nav");
+  if (!nav) return;
+  const current = getArchiveFilter();
+  nav.querySelectorAll(".app-nav-item").forEach((btn) => {
+    const isSelected = btn.dataset.archiveView === current;
+    btn.classList.toggle("selected", isSelected);
+    if (isSelected) {
+      btn.setAttribute("aria-current", "page");
+    } else {
+      btn.removeAttribute("aria-current");
+    }
+  });
+}
 
-  const dropdown = createDropdown({
-    options: ARCHIVE_FILTER_OPTIONS,
-    value: getArchiveFilter(),
-    placeholder: "Vista...",
-    mobileTitle: "Vista",
-    className: "archive-filter-dropdown",
-    onSelect: (value) => {
+function initAppNav() {
+  const nav = document.getElementById("app-nav");
+  if (!nav) return;
+
+  nav.querySelectorAll(".app-nav-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const value = btn.dataset.archiveView === "archived" ? "archived" : "active";
+      if (value === getArchiveFilter()) return;
       saveArchiveFilter(value);
       currentFilterTags = [];
       renderFilterTags();
       renderCounters();
-    },
+      updateAppNavSelection();
+    });
   });
-  container.innerHTML = "";
-  container.appendChild(dropdown);
+
+  updateAppNavSelection();
+  if (typeof lucide !== "undefined") lucide.createIcons({ root: nav });
 }
 
 function initFiltersMobileButton() {
@@ -1062,7 +1076,7 @@ function initFiltersMobileButton() {
           currentFilterTags = [];
           renderFilterTags();
           renderCounters();
-          initArchiveFilterDropdown();
+          updateAppNavSelection();
         },
       });
     },
@@ -1303,7 +1317,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initFrequencyDropdown();
   initSortDropdown();
   initTimeFilterDropdown();
-  initArchiveFilterDropdown();
+  initAppNav();
   initFiltersMobileButton();
   const searchInput = document.getElementById("counters-search-input");
   if (searchInput) {
