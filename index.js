@@ -47,6 +47,7 @@ import Modal from "./components/modal/modal.component.js";
 import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
 import { openFiltersBottomSheet } from "./components/filters-mobile-sheet/filters-mobile-sheet.js";
 import "./components/dropdown/dropdown.component.js";
+import "./components/app-nav/app-nav.component.js";
 import { dividerHtml } from "./components/divider/divider.component.js";
 
 function getConfig() {
@@ -833,6 +834,13 @@ const ARCHIVE_FILTER_OPTIONS = [
   { value: "archived", label: "Archivados" },
 ];
 
+const APP_NAV_ITEMS = [
+  { value: "active", label: "Principal", icon: "layout-list" },
+  { value: "archived", label: "Archivados", icon: "archive" },
+];
+
+let appNavInstance = null;
+
 /**
  * Rango de fechas: Modal en escritorio, BottomSheet en móvil (mismo criterio que config / contador).
  * @returns {Promise<{ mode: 'custom', startDate: string, endDate: string } | null>}
@@ -1011,38 +1019,28 @@ function initTimeFilterDropdown() {
 }
 
 function updateAppNavSelection() {
-  const nav = document.getElementById("app-nav");
-  if (!nav) return;
-  const current = getArchiveFilter();
-  nav.querySelectorAll(".app-nav-item").forEach((btn) => {
-    const isSelected = btn.dataset.archiveView === current;
-    btn.classList.toggle("selected", isSelected);
-    if (isSelected) {
-      btn.setAttribute("aria-current", "page");
-    } else {
-      btn.removeAttribute("aria-current");
-    }
-  });
+  if (!appNavInstance) return;
+  appNavInstance.setValue(getArchiveFilter());
 }
 
 function initAppNav() {
-  const nav = document.getElementById("app-nav");
-  if (!nav) return;
+  const mount = document.getElementById("app-nav-mount");
+  if (!mount || typeof window.createAppNav !== "function") return;
 
-  nav.querySelectorAll(".app-nav-item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const value = btn.dataset.archiveView === "archived" ? "archived" : "active";
+  mount.innerHTML = "";
+  appNavInstance = window.createAppNav({
+    items: APP_NAV_ITEMS,
+    value: getArchiveFilter(),
+    onSelect: (value) => {
       if (value === getArchiveFilter()) return;
       saveArchiveFilter(value);
       currentFilterTags = [];
       renderFilterTags();
       renderCounters();
-      updateAppNavSelection();
-    });
+      appNavInstance.setValue(value);
+    },
   });
-
-  updateAppNavSelection();
-  if (typeof lucide !== "undefined") lucide.createIcons({ root: nav });
+  mount.appendChild(appNavInstance);
 }
 
 function initFiltersMobileButton() {
