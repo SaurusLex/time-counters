@@ -25,6 +25,9 @@ function createAppNav({
   aside.className = "app-nav";
   aside.setAttribute("aria-label", ariaLabel);
 
+  const authSlot = document.createElement("div");
+  authSlot.className = "app-nav-auth";
+
   const nav = document.createElement("nav");
   nav.className = "app-nav-list";
 
@@ -44,6 +47,7 @@ function createAppNav({
     nav.appendChild(btn);
   });
 
+  aside.appendChild(authSlot);
   aside.appendChild(nav);
 
   aside.setValue = (newValue) => {

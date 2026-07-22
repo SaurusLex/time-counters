@@ -23,6 +23,25 @@
     z-index: 2;
   }
 
+  .app-nav-auth {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid #e8e8e8;
+    box-sizing: border-box;
+  }
+
+  .app-nav-auth #auth-status-indicator {
+    width: 100%;
+  }
+
+  .app-nav-auth .auth-menu-dropdown {
+    width: 100%;
+  }
+
   .app-nav-list {
     display: flex;
     flex-direction: column;

@@ -1041,6 +1041,7 @@ function initAppNav() {
     },
   });
   mount.appendChild(appNavInstance);
+  placeAuthStatusIndicator();
 }
 
 function initFiltersMobileButton() {
@@ -1243,6 +1244,34 @@ window.renderCounters = renderCounters;
 
 let authStateResolved = false;
 
+const authStatusDesktopMediaQuery = window.matchMedia("(min-width: 601px)");
+
+function isAuthStatusInDesktopNav() {
+  return authStatusDesktopMediaQuery.matches;
+}
+
+function placeAuthStatusIndicator() {
+  const indicator = document.getElementById("auth-status-indicator");
+  const headerMount = document.getElementById("auth-status-indicator-mount");
+  const navAuthSlot = document.querySelector(".app-nav-auth");
+  if (!indicator) return;
+
+  const target = isAuthStatusInDesktopNav() && navAuthSlot
+    ? navAuthSlot
+    : headerMount;
+  if (target && indicator.parentElement !== target) {
+    target.appendChild(indicator);
+  }
+}
+
+function initAuthStatusPlacement() {
+  placeAuthStatusIndicator();
+  authStatusDesktopMediaQuery.addEventListener("change", () => {
+    placeAuthStatusIndicator();
+    renderAuthStatusIndicator();
+  });
+}
+
 function renderAuthStatusIndicator() {
   const container = document.getElementById("auth-status-indicator");
   if (!container) return;
@@ -1295,7 +1324,7 @@ function renderAuthStatusIndicator() {
     className: "auth-menu-dropdown",
     disabled: loading,
     mobileTitle: text,
-    panelAlign: "end",
+    panelAlign: isAuthStatusInDesktopNav() ? "start" : "end",
     panelMinWidth: "180px",
     onSelect: (val) => {
       if (val === "config") openConfigModal();
@@ -1307,6 +1336,7 @@ function renderAuthStatusIndicator() {
   container.innerHTML = "";
   container.appendChild(dropdown);
   if (typeof lucide !== "undefined") lucide.createIcons({ root: dropdown });
+  placeAuthStatusIndicator();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -1316,6 +1346,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initSortDropdown();
   initTimeFilterDropdown();
   initAppNav();
+  initAuthStatusPlacement();
   initFiltersMobileButton();
   const searchInput = document.getElementById("counters-search-input");
   if (searchInput) {
