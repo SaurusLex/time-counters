@@ -30,11 +30,24 @@
     <div class="app-layout">
       <div id="app-nav-mount"></div>
       <div class="app-body">
-      <aside id="app-sidebar" class="app-sidebar" aria-label="Panel lateral">
+      <aside id="app-sidebar" class="app-sidebar" aria-labelledby="filters-panel-title">
         <div class="sidebar-filters filters-desktop-only">
+          <h2 id="filters-panel-title" class="filters-panel-title">Filtrar y ordenar</h2>
+          <div class="sort-filter-row">
+            <label class="sort-filter-label">Ordenar:</label>
+            <div class="sort-dropdown-container"></div>
+          </div>
           <div class="filter-tags-section">
-            <label>Filtrar por etiquetas:</label>
+            <label>Etiquetas:</label>
             <div class="filter-tags-list"></div>
+          </div>
+          <div class="time-direction-filters-row">
+            <label class="time-direction-filters-label">Respecto a hoy:</label>
+            <div
+              class="time-direction-filters"
+              role="group"
+              aria-label="Respecto a hoy"
+            ></div>
           </div>
           <div class="time-quick-filters-row">
             <label class="time-quick-filters-label">Periodo:</label>
@@ -80,15 +93,26 @@
             />
           </div>
           <div id="filters-mobile-toolbar" class="filters-mobile-only"></div>
-          <div id="sort-dropdown-container" class="filters-desktop-only"></div>
-          <div id="time-filter-dropdown-container" class="filters-desktop-only"></div>
         </div>
       </div>
       </div>
       <div class="main-filters filters-mobile-only">
+        <h2 class="filters-panel-title">Filtrar y ordenar</h2>
+        <div class="sort-filter-row">
+          <label class="sort-filter-label">Ordenar:</label>
+          <div class="sort-dropdown-container"></div>
+        </div>
         <div class="filter-tags-section">
-          <label>Filtrar por etiquetas:</label>
+          <label>Etiquetas:</label>
           <div class="filter-tags-list"></div>
+        </div>
+        <div class="time-direction-filters-row">
+          <label class="time-direction-filters-label">Respecto a hoy:</label>
+          <div
+            class="time-direction-filters"
+            role="group"
+            aria-label="Respecto a hoy"
+          ></div>
         </div>
         <div class="time-quick-filters-row">
           <label class="time-quick-filters-label">Periodo:</label>

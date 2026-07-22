@@ -728,8 +728,8 @@ export function renderCounters() {
         icon: "filter-x",
         title: "Ningún contador coincide",
         subtitle: hasSearch
-          ? "Prueba otras palabras o borra el texto de búsqueda. También puedes ajustar etiquetas o «Mostrar»."
-          : "Prueba a quitar filtros de etiquetas o a cambiar «Mostrar» en la barra de filtros.",
+          ? "Prueba otras palabras o borra el texto de búsqueda. También puedes ajustar etiquetas o «Respecto a hoy»."
+          : "Prueba a quitar filtros de etiquetas o a cambiar «Respecto a hoy» en el panel de filtros.",
         primaryAction: null,
       });
     }

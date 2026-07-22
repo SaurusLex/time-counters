@@ -243,11 +243,13 @@ function showDeleteConfirm({ message, actions, anchorElement, counterName }) {
 }
 
 // Inicializar el CounterManager con las dependencias necesarias
-function updatePeriodFiltersVisibility() {
+function updateSidebarFiltersVisibility() {
   const hasCounters = getCounters().length > 0;
-  document.querySelectorAll(".time-quick-filters-row").forEach((row) => {
-    row.style.display = hasCounters ? "" : "none";
-  });
+  document
+    .querySelectorAll(".time-direction-filters-row, .time-quick-filters-row")
+    .forEach((row) => {
+      row.style.display = hasCounters ? "" : "none";
+    });
 }
 
 function appendQuickFilterChips(container) {
@@ -339,8 +341,32 @@ function appendQuickFilterChips(container) {
   if (typeof lucide !== "undefined") lucide.createIcons({ root: container });
 }
 
-function refreshQuickFilterChips() {
-  updatePeriodFiltersVisibility();
+function appendTimeDirectionFilterChips(container) {
+  if (!container || typeof window.createTag !== "function") return;
+  container.innerHTML = "";
+  const current = getTimeFilter();
+
+  TIME_DIRECTION_FILTER_OPTIONS.forEach((opt) => {
+    const chip = window.createTag({
+      text: opt.label,
+      size: "sm",
+      removable: false,
+      selectable: true,
+      selected: current === opt.value,
+      onSelect: () => {
+        saveTimeFilter(current === opt.value ? "all" : opt.value);
+        refreshSidebarFilterChips();
+        renderCounters();
+      },
+    });
+    chip.classList.add("time-direction-filter-chip", "filter-tag-btn");
+    container.appendChild(chip);
+  });
+}
+
+function refreshSidebarFilterChips() {
+  updateSidebarFiltersVisibility();
+  document.querySelectorAll(".time-direction-filters").forEach(appendTimeDirectionFilterChips);
   document.querySelectorAll(".time-quick-filters").forEach(appendQuickFilterChips);
 }
 
@@ -358,7 +384,7 @@ initCounterManager({
   getCounterTimeElement,
   deleteCounter: deleteCounterFromManager,
   showDeleteConfirm,
-  onAfterRenderCounters: refreshQuickFilterChips,
+  onAfterRenderCounters: refreshSidebarFilterChips,
   onAfterDelete: async (ctx = {}) => {
     const deletedOccurrence = ctx.kind === "occurrence";
     showToast(deletedOccurrence ? "Evento eliminado" : "Contador eliminado", {
@@ -823,10 +849,9 @@ const SORT_OPTIONS = [
   { value: "oldest", label: "Más antiguo primero" },
 ];
 
-const TIME_FILTER_OPTIONS = [
-  { value: "all", label: "Todos" },
-  { value: "past", label: "Contadores pasados" },
-  { value: "future", label: "Contadores futuros" },
+const TIME_DIRECTION_FILTER_OPTIONS = [
+  { value: "past", label: "Pasados" },
+  { value: "future", label: "Futuros" },
 ];
 
 const ARCHIVE_FILTER_OPTIONS = [
@@ -981,41 +1006,28 @@ function askForCustomDateRange() {
   });
 }
 
+let sortDropdownInstances = [];
+
 function initSortDropdown() {
-  const container = document.getElementById("sort-dropdown-container");
-  if (!container || typeof createDropdown !== "function") return;
-
-  const dropdown = createDropdown({
-    options: SORT_OPTIONS,
-    value: getSortOrder(),
-    placeholder: "Ordenar...",
-    mobileTitle: "Ordenar",
-    className: "sort-dropdown",
-    onSelect: (value) => {
-      saveSortOrder(value);
-      renderCounters();
-    },
+  if (typeof createDropdown !== "function") return;
+  sortDropdownInstances = [];
+  document.querySelectorAll(".sort-dropdown-container").forEach((container) => {
+    container.innerHTML = "";
+    const dropdown = createDropdown({
+      options: SORT_OPTIONS,
+      value: getSortOrder(),
+      placeholder: "Ordenar...",
+      mobileTitle: "Ordenar",
+      className: "sort-dropdown",
+      onSelect: (value) => {
+        saveSortOrder(value);
+        sortDropdownInstances.forEach((instance) => instance.setValue(value));
+        renderCounters();
+      },
+    });
+    container.appendChild(dropdown);
+    sortDropdownInstances.push(dropdown);
   });
-  container.appendChild(dropdown);
-}
-
-function initTimeFilterDropdown() {
-  const container = document.getElementById("time-filter-dropdown-container");
-  if (!container || typeof createDropdown !== "function") return;
-
-  const dropdown = createDropdown({
-    options: TIME_FILTER_OPTIONS,
-    value: getTimeFilter(),
-    placeholder: "Mostrar...",
-    mobileTitle: "Mostrar",
-    className: "time-filter-dropdown",
-    onSelect: (value) => {
-      saveTimeFilter(value);
-      renderCounters();
-    },
-  });
-  container.innerHTML = "";
-  container.appendChild(dropdown);
 }
 
 function updateAppNavSelection() {
@@ -1055,21 +1067,8 @@ function initFiltersMobileButton() {
     className: "filters-mobile-trigger",
     onClick: () => {
       openFiltersBottomSheet({
-        sortOptions: SORT_OPTIONS,
-        timeOptions: TIME_FILTER_OPTIONS,
         archiveOptions: ARCHIVE_FILTER_OPTIONS,
-        getSort: getSortOrder,
-        getTime: getTimeFilter,
         getArchive: getArchiveFilter,
-        onSortChange: (value) => {
-          saveSortOrder(value);
-          renderCounters();
-        },
-        onTimeChange: (value) => {
-          saveTimeFilter(value);
-          renderCounters();
-          initTimeFilterDropdown();
-        },
         onArchiveChange: (value) => {
           saveArchiveFilter(value);
           currentFilterTags = [];
@@ -1198,7 +1197,7 @@ function renderFilterTags() {
   if (filtersBar) {
     filtersBar.style.display = hasCounters ? "" : "none";
   }
-  updatePeriodFiltersVisibility();
+  updateSidebarFiltersVisibility();
 
   const filterSections = document.querySelectorAll(".filter-tags-section");
   const filterTagsLists = document.querySelectorAll(".filter-tags-list");
@@ -1344,7 +1343,7 @@ window.addEventListener("DOMContentLoaded", () => {
   initCounterModalUnitsControls();
   initFrequencyDropdown();
   initSortDropdown();
-  initTimeFilterDropdown();
+  refreshSidebarFilterChips();
   initAppNav();
   initAuthStatusPlacement();
   initFiltersMobileButton();
