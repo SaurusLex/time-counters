@@ -977,8 +977,8 @@ select.form-control {
     align-items: center;
     gap: 8px;
   }
-  #auth-status-indicator {
-    flex-shrink: 0;
+  #auth-status-indicator-mount:empty {
+    display: none;
   }
 }
 .btn-group {

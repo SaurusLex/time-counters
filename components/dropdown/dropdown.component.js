@@ -1,7 +1,7 @@
 // dropdown.component.js
 // Componente dropdown reutilizable: lista de opciones, selección única
 // En móvil usa bottom sheet para las opciones
-// Uso: createDropdown({ options, value, placeholder, onSelect, className, disabled, mobileTitle, triggerChildren, persistSelection, panelAlign, panelMinWidth })
+// Uso: createDropdown({ options, value, placeholder, onSelect, onOpen, className, disabled, mobileTitle, triggerChildren, persistSelection, panelAlign, panelMinWidth })
 // options[] puede incluir icon?: string (nombre Lucide) para mostrar icono antes del label
 // Estilos: components/dropdown/dropdown.css
 
@@ -15,6 +15,7 @@ function createDropdown({
   value = null,
   placeholder = "Seleccionar...",
   onSelect = null,
+  onOpen = null,
   className = "",
   disabled = false,
   mobileTitle = "Seleccionar",
@@ -93,6 +94,7 @@ function createDropdown({
 
   function open() {
     if (disabled) return;
+    if (typeof onOpen === "function") onOpen();
     if (isMobile()) {
       wrapper.classList.add("open");
       trigger.setAttribute("aria-expanded", "true");

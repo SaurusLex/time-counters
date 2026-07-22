@@ -45,7 +45,6 @@ import {
 import { showPopover } from "./components/popover/popover.js";
 import Modal from "./components/modal/modal.component.js";
 import BottomSheet from "./components/bottom-sheet/bottom-sheet.component.js";
-import { openFiltersBottomSheet } from "./components/filters-mobile-sheet/filters-mobile-sheet.js";
 import "./components/dropdown/dropdown.component.js";
 import "./components/app-nav/app-nav.component.js";
 import { dividerHtml } from "./components/divider/divider.component.js";
@@ -865,6 +864,10 @@ const APP_NAV_ITEMS = [
 ];
 
 let appNavInstance = null;
+let appNavDrawerOpen = false;
+let appNavDrawerCloseTimer = null;
+
+const APP_NAV_DRAWER_TRANSITION_MS = 280;
 
 /**
  * Rango de fechas: Modal en escritorio, BottomSheet en móvil (mismo criterio que config / contador).
@@ -1035,6 +1038,114 @@ function updateAppNavSelection() {
   appNavInstance.setValue(getArchiveFilter());
 }
 
+function ensureAppNavOverlay() {
+  let overlay = document.querySelector(".app-nav-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "app-nav-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.addEventListener("click", closeAppNavDrawer);
+    document.body.appendChild(overlay);
+  }
+  return overlay;
+}
+
+function clearAppNavDrawerCloseTimer() {
+  if (appNavDrawerCloseTimer) {
+    clearTimeout(appNavDrawerCloseTimer);
+    appNavDrawerCloseTimer = null;
+  }
+}
+
+function finishAppNavDrawerClose(nav, overlay, btn) {
+  nav.classList.remove("is-closing");
+  if (overlay) {
+    overlay.classList.remove("is-visible", "is-closing");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+  if (btn) btn.setAttribute("aria-expanded", "false");
+  unlockBodyScroll();
+}
+
+function openAppNavDrawer() {
+  const nav = document.getElementById("app-nav");
+  const btn = document.getElementById("app-nav-menu-btn");
+  if (!nav || appNavDrawerOpen) return;
+
+  clearAppNavDrawerCloseTimer();
+  const overlay = ensureAppNavOverlay();
+  appNavDrawerOpen = true;
+  nav.classList.remove("is-closing");
+  overlay.classList.remove("is-closing");
+  overlay.classList.add("is-visible");
+  overlay.setAttribute("aria-hidden", "false");
+  nav.classList.add("is-open");
+  if (btn) btn.setAttribute("aria-expanded", "true");
+  lockBodyScroll();
+}
+
+function closeAppNavDrawer() {
+  const nav = document.getElementById("app-nav");
+  const btn = document.getElementById("app-nav-menu-btn");
+  const overlay = document.querySelector(".app-nav-overlay");
+  if (!nav || !appNavDrawerOpen) return;
+
+  appNavDrawerOpen = false;
+  clearAppNavDrawerCloseTimer();
+
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  if (prefersReducedMotion) {
+    nav.classList.remove("is-open", "is-closing");
+    finishAppNavDrawerClose(nav, overlay, btn);
+    return;
+  }
+
+  nav.classList.remove("is-open");
+  nav.classList.add("is-closing");
+  if (overlay) overlay.classList.add("is-closing");
+
+  const onTransitionEnd = (event) => {
+    if (event.target !== nav || event.propertyName !== "transform") return;
+    nav.removeEventListener("transitionend", onTransitionEnd);
+    clearAppNavDrawerCloseTimer();
+    finishAppNavDrawerClose(nav, overlay, btn);
+  };
+
+  nav.addEventListener("transitionend", onTransitionEnd);
+  appNavDrawerCloseTimer = setTimeout(() => {
+    nav.removeEventListener("transitionend", onTransitionEnd);
+    if (!nav.classList.contains("is-closing")) return;
+    finishAppNavDrawerClose(nav, overlay, btn);
+  }, APP_NAV_DRAWER_TRANSITION_MS + 50);
+}
+
+function initAppNavMenuButton() {
+  const btn = document.getElementById("app-nav-menu-btn");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    if (appNavDrawerOpen) {
+      closeAppNavDrawer();
+    } else {
+      openAppNavDrawer();
+    }
+  });
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons({ root: btn });
+  }
+}
+
+function initAppNavDrawerResizeHandler() {
+  const mediaQuery = window.matchMedia("(min-width: 601px)");
+  mediaQuery.addEventListener("change", () => {
+    if (mediaQuery.matches) closeAppNavDrawer();
+  });
+}
+
 function initAppNav() {
   const mount = document.getElementById("app-nav-mount");
   if (!mount || typeof window.createAppNav !== "function") return;
@@ -1044,6 +1155,7 @@ function initAppNav() {
     items: APP_NAV_ITEMS,
     value: getArchiveFilter(),
     onSelect: (value) => {
+      closeAppNavDrawer();
       if (value === getArchiveFilter()) return;
       saveArchiveFilter(value);
       currentFilterTags = [];
@@ -1056,32 +1168,6 @@ function initAppNav() {
   placeAuthStatusIndicator();
 }
 
-function initFiltersMobileButton() {
-  const wrap = document.getElementById("filters-mobile-toolbar");
-  if (!wrap || typeof window.createButton !== "function") return;
-
-  wrap.innerHTML = "";
-  const btn = window.createButton({
-    text: "Filtros",
-    color: "secondary",
-    className: "filters-mobile-trigger",
-    onClick: () => {
-      openFiltersBottomSheet({
-        archiveOptions: ARCHIVE_FILTER_OPTIONS,
-        getArchive: getArchiveFilter,
-        onArchiveChange: (value) => {
-          saveArchiveFilter(value);
-          currentFilterTags = [];
-          renderFilterTags();
-          renderCounters();
-          updateAppNavSelection();
-        },
-      });
-    },
-  });
-  wrap.appendChild(btn);
-}
-
 document.getElementById("close-counter-modal").onclick = closeCounterModal;
 document.getElementById("cancel-counter-modal").onclick = closeCounterModal;
 
@@ -1091,6 +1177,10 @@ document.getElementById("counter-modal").onclick = function (e) {
   if (e.target === this) closeCounterModal();
 };
 document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && appNavDrawerOpen) {
+    closeAppNavDrawer();
+    return;
+  }
   if (e.key === "Escape" && (counterSheetView || document.getElementById("counter-modal")?.style.display !== "none")) {
     closeCounterModal();
   }
@@ -1243,21 +1333,13 @@ window.renderCounters = renderCounters;
 
 let authStateResolved = false;
 
-const authStatusDesktopMediaQuery = window.matchMedia("(min-width: 601px)");
-
-function isAuthStatusInDesktopNav() {
-  return authStatusDesktopMediaQuery.matches;
-}
-
 function placeAuthStatusIndicator() {
   const indicator = document.getElementById("auth-status-indicator");
   const headerMount = document.getElementById("auth-status-indicator-mount");
   const navAuthSlot = document.querySelector(".app-nav-auth");
   if (!indicator) return;
 
-  const target = isAuthStatusInDesktopNav() && navAuthSlot
-    ? navAuthSlot
-    : headerMount;
+  const target = navAuthSlot || headerMount;
   if (target && indicator.parentElement !== target) {
     target.appendChild(indicator);
   }
@@ -1265,10 +1347,6 @@ function placeAuthStatusIndicator() {
 
 function initAuthStatusPlacement() {
   placeAuthStatusIndicator();
-  authStatusDesktopMediaQuery.addEventListener("change", () => {
-    placeAuthStatusIndicator();
-    renderAuthStatusIndicator();
-  });
 }
 
 function renderAuthStatusIndicator() {
@@ -1323,8 +1401,9 @@ function renderAuthStatusIndicator() {
     className: "auth-menu-dropdown",
     disabled: loading,
     mobileTitle: text,
-    panelAlign: isAuthStatusInDesktopNav() ? "start" : "end",
+    panelAlign: "start",
     panelMinWidth: "180px",
+    onOpen: closeAppNavDrawer,
     onSelect: (val) => {
       if (val === "config") openConfigModal();
       else if (val === "logout") handleLogoutClick();
@@ -1345,8 +1424,9 @@ window.addEventListener("DOMContentLoaded", () => {
   initSortDropdown();
   refreshSidebarFilterChips();
   initAppNav();
+  initAppNavMenuButton();
+  initAppNavDrawerResizeHandler();
   initAuthStatusPlacement();
-  initFiltersMobileButton();
   const searchInput = document.getElementById("counters-search-input");
   if (searchInput) {
     searchInput.addEventListener("input", () => renderCounters());
