@@ -35,7 +35,7 @@ body {
     min-width: 0;
     display: grid;
     grid-template-columns: 280px minmax(0, 800px);
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto auto;
     align-content: start;
     column-gap: var(--space-6);
     max-width: calc(800px + 280px + var(--space-6));
@@ -51,7 +51,7 @@ body {
   .app-sidebar {
     display: block;
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 4;
     align-self: start;
     position: sticky;
     top: var(--space-6);
@@ -70,9 +70,22 @@ body {
     min-width: 0;
   }
 
+  .header-action-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .counters-filters-bar {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
   #counters-list {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 4;
     min-width: 0;
     margin-top: 1em;
   }
